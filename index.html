@@ -1,0 +1,1729 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แบบฟอร์มรายงานอุบัติเหตุ</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Load Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Load Google Font (Sarabun) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- DESIGN STYLES --- */
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f7f7f7;
+        }
+
+        /* Input Box Style */
+        .input-box-style {
+            background-color: #f0f0f0;
+            border: 1px solid #d1d5db;
+            border-radius: 2px;
+            padding: 0.5rem;
+            min-height: 2.5rem;
+            width: 100%;
+            font-size: 0.875rem;
+            color: #000;
+        }
+        
+        input.input-box-style, 
+        select.input-box-style, 
+        textarea.input-box-style {
+            outline: none;
+        }
+        input.input-box-style:focus, 
+        select.input-box-style:focus, 
+        textarea.input-box-style:focus {
+            border-color: #9ca3af;
+            background-color: #e5e7eb;
+        }
+
+        /* Readonly Input Style */
+        input[readonly] {
+            background-color: #e5e7eb; /* Darker gray */
+            color: #6b7280; /* Gray text */
+            cursor: not-allowed;
+        }
+
+        /* Section Header */
+        .section-header {
+            font-size: 1rem; 
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            border-bottom: 2px solid #9ca3af;
+            padding-bottom: 0.1rem;
+            color: #000;
+        }
+
+        /* Label */
+        .label-style {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #000;
+            margin-bottom: 0.25rem;
+            display: block;
+        }
+
+        /* Loader */
+        .loader {
+            border-top-color: #3498db;
+            -webkit-animation: spin 1s linear infinite;
+            animation: spin 1s linear infinite;
+        }
+        @-webkit-keyframes spin {
+            0% { -webkit-transform: rotate(0deg); }
+            100% { -webkit-transform: rotate(360deg); }
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Menu Active State */
+        .menu-link.active {
+            background-color: #f3f4f6;
+            font-weight: 600;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .report-list-item.active {
+            background-color: #fee2e2;
+            border-left: 4px solid #b91c1c;
+        }
+
+        /* --- PRINT STYLES --- */
+        @media print {
+            @page {
+                size: A4;
+                margin: 10mm 15mm;
+            }
+
+            html, body {
+                background: #fff !important;
+                font-size: 10pt !important;
+                width: 100% !important;
+                height: auto !important;
+                padding: 0 !important; 
+                margin: 0 !important;
+            }
+
+            /* Hide UI elements */
+            header, 
+            #menu-sidebar, 
+            #draft-sidebar, 
+            #sidebar-backdrop, 
+            #add-investigator-button, 
+            #accident-form .text-center, 
+            .remove-investigator-button,
+            #report-details-modal .flex.justify-between.items-center,
+            #page-dashboard, 
+            #page-settings, 
+            #page-all-reports,
+            #screen-only-header,
+            #print-header,
+            #success-modal,
+            #draft-modal,
+            #delete-confirm-modal, /* Hide delete modal */
+            #form-actions-container button:not(#submit-button) /* Hide utility buttons */
+            {
+                display: none !important;
+            }
+            
+            /* Fix Edit/Delete/Print buttons in detail view during print */
+            #panel-actions-container, #modal-actions-container {
+                display: none !important;
+            }
+
+            /* Modal Print Logic */
+            body.printing-modal > #page-home { display: none !important; }
+            body.printing-modal > #report-details-modal {
+                display: block !important;
+                position: static !important;
+                inset: auto !important;
+                padding: 0 !important;
+                background: none !important;
+                width: 100% !important;
+                height: auto !important;
+            }
+            
+            body.printing-modal #report-details-modal .bg-white {
+                box-shadow: none !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                overflow: visible !important;
+            }
+
+            body.printing-modal #report-details-content {
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+                height: auto !important;
+            }
+
+            /* Restore Borders for Print */
+            .input-box-style {
+                background-color: #ffffff !important;
+                border: 1px solid #d1d5db !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            /* No Border Class */
+            .print-no-border {
+                border: none !important;
+                background-color: transparent !important;
+            }
+            
+            .print-bg-gray {
+                background-color: #ffffff !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            body.printing-modal .section-header {
+                border-bottom: none !important;
+            }
+            
+            .grid { display: grid !important; }
+            
+            .print-page-break {
+                page-break-before: always !important;
+                display: block;
+                height: 1px;
+            }
+            
+            .page-break-inside-avoid {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-[#f7f7f7] text-gray-900 pt-20 pb-8 px-2 sm:px-4 lg:pl-64">
+
+    <!-- Header -->
+    <header class="bg-white shadow-sm fixed top-0 left-0 right-0 z-40 lg:pl-64 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center">
+                    <button id="open-menu-sidebar-button" class="p-2 rounded-md text-gray-600 hover:bg-gray-100 lg:hidden">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="flex-grow text-center">
+                    <h1 class="text-lg font-bold text-gray-800">ระบบรายงานอุบัติเหตุ</h1>
+                </div>
+                <div class="flex items-center">
+                    <button id="open-draft-sidebar-button" class="p-2 rounded-md text-gray-600 hover:bg-gray-100">
+                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Menu Sidebar -->
+    <div id="menu-sidebar" class="fixed inset-y-0 left-0 w-64 bg-white shadow-xl z-50 transform -translate-x-full transition-transform duration-300 ease-in-out lg:translate-x-0 border-r border-gray-200">
+        <div class="flex items-center justify-between p-4 border-b h-[65px]">
+            <h2 class="text-lg font-bold text-gray-800">เมนูหลัก</h2>
+            <button id="close-menu-sidebar-button" class="p-1 rounded-md text-gray-500 hover:bg-gray-100 lg:hidden">
+                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <nav id="main-menu" class="p-4 space-y-1">
+            <a href="#" class="menu-link flex items-center p-2 text-gray-700 rounded-md hover:bg-gray-50 active" data-page="home">
+                <span class="mr-3">📝</span> <span>หน้าหลัก (ฟอร์ม)</span>
+            </a>
+            <a href="#" class="menu-link flex items-center p-2 text-gray-700 rounded-md hover:bg-gray-50" data-page="dashboard">
+                <span class="mr-3">📊</span> <span>แดชบอร์ด</span>
+            </a>
+            <a href="#" class="menu-link flex items-center p-2 text-gray-700 rounded-md hover:bg-gray-50" data-page="all-reports">
+                <span class="mr-3">📂</span> <span>รายงานทั้งหมด</span>
+            </a>
+            <a href="#" class="menu-link flex items-center p-2 text-gray-700 rounded-md hover:bg-gray-50" data-page="settings">
+                <span class="mr-3">⚙️</span> <span>ตั้งค่า</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Drafts Sidebar -->
+    <div id="draft-sidebar" class="fixed inset-y-0 right-0 w-80 bg-white shadow-xl z-50 transform translate-x-full transition-transform duration-300 ease-in-out border-l border-gray-200">
+        <div class="flex items-center justify-between p-4 border-b h-[65px]">
+            <h2 class="text-lg font-bold text-gray-800">รายการฉบับร่าง</h2>
+            <button id="close-draft-sidebar-button" class="p-1 rounded-md text-gray-500 hover:bg-gray-100">
+                <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div id="draft-list-container" class="p-4 overflow-y-auto space-y-3 h-[calc(100vh-65px)]"></div>
+    </div>
+    
+    <div id="sidebar-backdrop" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden transition-opacity duration-300"></div>
+
+    <!-- === MAIN CONTENT (FORM) === -->
+    <div id="page-home" class="page-content max-w-4xl mx-auto bg-white p-6 sm:p-10 shadow-lg rounded-lg border border-gray-200">
+        
+        <!-- HEADER SECTION (LOGO LEFT, TEXT CENTER) -->
+        <div id="screen-only-header" class="mb-8 relative">
+            <div class="flex flex-col items-center relative">
+                 <!-- Logo positioned absolute top-left for desktop, relative for mobile -->
+                <div class="w-full flex justify-center sm:justify-start mb-2 sm:absolute sm:top-0 sm:left-0 sm:w-auto sm:mb-0">
+                    <img src="https://raw.githubusercontent.com/mm12346/AccidentReport/refs/heads/main/global.png" 
+                         alt="Global House Logo" 
+                         class="h-16 sm:h-20 w-auto object-contain"
+                         onerror="this.style.display='none'">
+                </div>
+                <div class="text-center sm:pt-2 w-full">
+                    <h1 id="form-title" class="text-2xl font-bold mb-1 text-gray-900">Accident Report</h1>
+                    <p class="text-base text-gray-700">แบบฟอร์มรายงานการสอบสวนอุบัติเหตุ</p>
+                    <p class="text-base text-gray-700">บริษัท สยามโกลบอลเฮ้าส์ จำกัด (มหาชน)</p>
+                </div>
+            </div>
+        </div>
+        
+        <div id="message-area" class="hidden p-4 mb-4 rounded-md font-medium"></div>
+
+        <form id="accident-form" class="space-y-8">
+            <!-- HIDDEN FIELDS FOR EDIT MODE -->
+            <input type="hidden" id="current-draft-id" name="currentDraftId">
+            <input type="hidden" id="edit-report-id" name="reportId">
+            <input type="hidden" id="existing-image-url" name="existingImageUrl">
+
+            <!-- --- HEADER FIELDS LAYOUT --- -->
+            <div class="bg-white pb-6 mb-6 border-b border-gray-300">
+                
+                <!-- ROW 1: สาขา + ครั้งที่ -->
+                <div class="flex flex-wrap justify-center items-center gap-6 mb-4">
+                    <div class="flex items-center gap-2">
+                        <label for="branch" class="label-style mb-0 whitespace-nowrap text-right w-auto">สาขา <span class="text-red-500">*</span></label>
+                        <select id="branch" name="branch" class="input-box-style w-48" required>
+                            <option value="">-- เลือก --</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="issue-no" class="label-style mb-0 whitespace-nowrap text-right w-auto">ครั้งที่</label>
+                        <input type="text" id="issue-no" name="issueNo" class="input-box-style w-32 text-center bg-gray-100 cursor-not-allowed" placeholder="รอคำนวณ..." readonly>
+                    </div>
+                </div>
+
+                <!-- ROW 2: วันที่จัดทำ (CENTER) -->
+                <div class="flex justify-center items-center mb-4">
+                    <div class="flex items-center gap-2">
+                        <label for="date-issued" class="label-style mb-0 whitespace-nowrap text-right w-auto">วันที่จัดทำ</label>
+                        <input type="date" id="date-issued" name="dateIssued" class="input-box-style w-48 text-center" required>
+                    </div>
+                </div>
+
+                <!-- ROW 3: ประเภทอุบัติเหตุ + ผู้ได้รับผลกระทบ -->
+                <div class="flex flex-wrap justify-center items-center gap-6">
+                    <div class="flex items-center gap-2">
+                        <label for="accident-category" class="label-style mb-0 whitespace-nowrap text-right w-auto">ประเภทอุบัติเหตุ <span class="text-red-500">*</span></label>
+                        <select id="accident-category" name="accidentCategory" class="input-box-style w-48 bg-white" required>
+                            <option value="">-- เลือก --</option>
+                            <option value="ทรัพย์สินเสียหาย">ทรัพย์สินเสียหาย</option>
+                            <option value="บาดเจ็บส่งรพ.">บาดเจ็บส่ง รพ.</option>
+                            <option value="ปฐมพยาบาล">ปฐมพยาบาล</option>
+                            <option value="อื่นๆ">อื่นๆ</option>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label for="affected-person-type" class="label-style mb-0 whitespace-nowrap text-right w-auto">ผู้ได้รับผลกระทบ <span class="text-red-500">*</span></label>
+                        <select id="affected-person-type" name="affectedPersonType" class="input-box-style w-48 bg-white" required>
+                            <option value="">-- เลือก --</option>
+                            <option value="พนักงาน">พนักงาน</option>
+                            <option value="PC">PC</option>
+                            <option value="ผู้รับเหมา">ผู้รับเหมา</option>
+                            <option value="ลูกค้า">ลูกค้า</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section 1 -->
+            <section>
+                <h2 class="section-header">ส่วนที่ 1: ข้อมูลการเกิดอุบัติเหตุ</h2>
+                
+                <div class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex items-center gap-4">
+                            <label for="acc-date" class="label-style w-24 flex-shrink-0">วันที่เกิดเหตุ <span class="text-red-500">*</span></label>
+                            <input type="date" id="acc-date" name="accDate" class="input-box-style flex-grow" required>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <label for="acc-time" class="label-style w-24 flex-shrink-0 text-right md:text-left">เวลา <span class="text-red-500">*</span></label>
+                            <input type="time" id="acc-time" name="accTime" class="input-box-style w-32 text-center" required>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <label for="acc-location" class="label-style w-24 flex-shrink-0">สถานที่ <span class="text-red-500">*</span></label>
+                        <input type="text" id="acc-location" name="accLocation" class="input-box-style flex-grow" required>
+                    </div>
+
+                    <div class="flex items-center gap-4">
+                        <label for="acc-activity" class="label-style w-32 flex-shrink-0">ขั้นตอน/กิจกรรม <span class="text-red-500">*</span></label>
+                        <input type="text" id="acc-activity" name="accActivity" class="input-box-style flex-grow" required>
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label for="acc-machine" class="label-style w-32 flex-shrink-0">เครื่องมือ/เครื่องจักร <span class="text-red-500">*</span></label>
+                        <input type="text" id="acc-machine" name="accMachine" class="input-box-style flex-grow" required placeholder="ระบุ (ถ้าไม่มีให้ขีด -)">
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label for="acc-ppe" class="label-style w-32 flex-shrink-0">PPE ที่สวมใส่ <span class="text-red-500">*</span></label>
+                        <input type="text" id="acc-ppe" name="accPPE" class="input-box-style flex-grow" required placeholder="ระบุ (ถ้าไม่มีให้ขีด -)">
+                    </div>
+                    <div class="flex items-center gap-4">
+                        <label for="acc-type" class="label-style w-32 flex-shrink-0">ลักษณะอุบัติเหตุ <span class="text-red-500">*</span></label>
+                        <input type="text" id="acc-type" name="accType" class="input-box-style flex-grow" required>
+                    </div>
+
+                    <div>
+                        <label for="acc-details" class="label-style">รายละเอียด (ใคร, ทำอะไร, ที่ไหน, เมื่อไหร่, อย่างไร) <span class="text-red-500">*</span></label>
+                        <textarea id="acc-details" name="accDetails" rows="4" class="input-box-style h-32" required></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Image Section -->
+            <section>
+                <h2 class="section-header">รูปเหตุการณ์</h2>
+                <div class="border-2 border-gray-300 border-dashed rounded-lg p-6 text-center bg-gray-50 hover:bg-gray-100 transition-colors">
+                    <label for="acc-image" class="cursor-pointer block">
+                        <div class="text-gray-500 italic mb-2">คลิกเพื่ออัปโหลดรูปภาพ (ถ้ามี)</div>
+                        <input type="file" id="acc-image" name="accImage" accept="image/*" class="hidden">
+                        <img id="image-preview" src="" alt="Preview" class="hidden mx-auto max-h-64 rounded-md shadow-md object-contain">
+                    </label>
+                </div>
+            </section>
+
+            <!-- Prevention & Witness Section -->
+            <section>
+                <div class="mb-6">
+                    <h2 class="section-header">วิธีการป้องกันแก้ไขหลังเกิดอุบัติเหตุ <span class="text-red-500">*</span></h2>
+                    <textarea id="acc-prevention" name="accPrevention" rows="3" class="input-box-style" required></textarea>
+                </div>
+
+                <div>
+                    <h2 class="section-header">พยานผู้พบเห็นเหตุการณ์</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="acc-witness" class="label-style">ชื่อ-สกุล พยาน</label>
+                            <input type="text" id="acc-witness" name="accWitness" class="input-box-style">
+                        </div>
+                        <div>
+                            <label for="acc-witness-dept" class="label-style">แผนก</label>
+                            <input type="text" id="acc-witness-dept" name="accWitnessDept" class="input-box-style">
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 2 -->
+            <section>
+                <h2 class="section-header">ส่วนที่ 2: ความเสียหาย</h2>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <div class="sm:col-span-2">
+                        <label for="victim-name" class="label-style">ผู้ได้รับบาดเจ็บ <span class="text-red-500">*</span></label>
+                        <input type="text" id="victim-name" name="victimName" class="input-box-style" required>
+                    </div>
+                    <div>
+                        <label for="victim-id" class="label-style">รหัสพนักงาน <span class="text-red-500">*</span></label>
+                        <input type="text" id="victim-id" name="victimId" class="input-box-style" required>
+                    </div>
+                    <div>
+                        <label for="victim-age" class="label-style">อายุ <span class="text-red-500">*</span></label>
+                        <input type="number" id="victim-age" name="victimAge" class="input-box-style" required>
+                    </div>
+                    <div>
+                        <label for="victim-work-years" class="label-style">อายุงาน (ปี) <span class="text-red-500">*</span></label>
+                        <input type="number" step="0.1" id="victim-work-years" name="victimWorkYears" class="input-box-style" required>
+                    </div>
+                    <div>
+                        <label for="victim-dept" class="label-style">แผนก/สังกัด <span class="text-red-500">*</span></label>
+                        <input type="text" id="victim-dept" name="victimDept" class="input-box-style" required>
+                    </div>
+                    <!-- SPLIT FIELDS START -->
+                    <div class="sm:col-span-1">
+                        <label for="victim-injury-organ" class="label-style">อวัยวะที่บาดเจ็บ <span class="text-red-500">*</span></label>
+                        <input type="text" id="victim-injury-organ" name="victimInjuryOrgan" class="input-box-style" placeholder="ระบุอวัยวะ" required>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="victim-injury-type" class="label-style">ลักษณะการบาดเจ็บ <span class="text-red-500">*</span></label>
+                        <input type="text" id="victim-injury-type" name="victimInjuryType" class="input-box-style" placeholder="ระบุลักษณะ" required>
+                    </div>
+                    <!-- SPLIT FIELDS END -->
+                    <div class="sm:col-span-2">
+                        <label for="victim-treatment" class="label-style">การรักษา <span class="text-red-500">*</span></label>
+                        <input type="text" id="victim-treatment" name="victimTreatment" class="input-box-style" required>
+                    </div>
+                    <div>
+                        <label for="victim-days-lost" class="label-style">หยุดงาน (วัน) <span class="text-red-500">*</span></label>
+                        <input type="number" id="victim-days-lost" name="victimDaysLost" class="input-box-style" required>
+                    </div>
+                </div>
+                
+                <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label for="damage-cost" class="label-style">มูลค่าความเสียหาย (บาท) <span class="text-red-500">*</span></label>
+                        <input type="number" step="0.01" id="damage-cost" name="damageCost" class="input-box-style" required>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label for="damage-details" class="label-style">รายละเอียดความเสียหายอื่นๆ</label>
+                        <input type="text" id="damage-details" name="damageDetails" class="input-box-style">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3 -->
+            <section>
+                <h2 class="section-header">ส่วนที่ 3: การวิเคราะห์สาเหตุ</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="cause-unsafe-act" class="label-style">การกระทำที่ไม่ปลอดภัย (Unsafe Act) <span class="text-red-500">*</span></label>
+                        <textarea id="cause-unsafe-act" name="causeUnsafeAct" rows="3" class="input-box-style" required></textarea>
+                    </div>
+                    <div>
+                        <label for="cause-unsafe-condition" class="label-style">สภาพการณ์ที่ไม่ปลอดภัย (Unsafe Condition) <span class="text-red-500">*</span></label>
+                        <textarea id="cause-unsafe-condition" name="causeUnsafeCondition" rows="3" class="input-box-style" required></textarea>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label for="cause-correction" class="label-style">แนวทางแก้ไข/ป้องกันการเกิดซ้ำ <span class="text-red-500">*</span></label>
+                        <textarea id="cause-correction" name="causeCorrection" rows="3" class="input-box-style" required></textarea>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 4 -->
+            <section>
+                <h2 class="section-header">ส่วนที่ 4: ความคิดเห็นเพิ่มเติม</h2>
+                <div class="space-y-3">
+                    <div>
+                        <label for="opinion-prevention" class="label-style">ข้อเสนอแนะเพื่อการป้องกัน <span class="text-red-500">*</span></label>
+                        <input type="text" id="opinion-prevention" name="opinionPrevention" class="input-box-style" required>
+                    </div>
+                    <div>
+                        <label for="opinion-victim" class="label-style">ความเห็นผู้ประสบเหตุ <span class="text-red-500">*</span></label>
+                        <input type="text" id="opinion-victim" name="opinionVictim" class="input-box-style" required>
+                    </div>
+                    <div>
+                        <label for="opinion-safety" class="label-style">ความเห็น จป./Loss Prevention <span class="text-red-500">*</span></label>
+                        <input type="text" id="opinion-safety" name="opinionSafety" class="input-box-style" required>
+                    </div>
+                    <div>
+                        <label for="penalty" class="label-style">บทลงโทษ (ถ้ามี)</label>
+                        <input type="text" id="penalty" name="penalty" class="input-box-style">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Investigators -->
+            <section>
+                <h2 class="section-header">ผู้เข้าร่วมการสอบสวน</h2>
+                <div id="investigators-container" class="space-y-3">
+                    <!-- Dynamic Rows -->
+                </div>
+                <button type="button" id="add-investigator-button" class="mt-3 text-sm text-green-700 hover:text-green-900 font-medium flex items-center">
+                    <span class="mr-1 text-lg">+</span> เพิ่มรายชื่อ
+                </button>
+            </section>
+
+            <!-- Buttons -->
+            <div id="form-actions-container" class="pt-6 flex flex-col sm:flex-row justify-center gap-3">
+                <!-- Cancel Edit Button (Hidden by default) -->
+                <button type="button" id="cancel-edit-button" class="hidden px-6 py-2.5 bg-gray-500 text-white font-semibold rounded shadow hover:bg-gray-600 transition-colors">
+                    ยกเลิกการแก้ไข
+                </button>
+
+                <button type="submit" id="submit-button" class="px-8 py-2.5 bg-red-600 text-white font-bold rounded shadow hover:bg-red-700 transition-colors flex justify-center items-center min-w-[120px]">
+                    <span id="button-text">ส่งรายงาน</span>
+                    <div id="button-loader" class="loader h-5 w-5 rounded-full border-2 border-t-2 border-white hidden"></div>
+                </button>
+                
+                <button type="button" id="save-draft-button" class="px-6 py-2.5 bg-blue-600 text-white font-semibold rounded shadow hover:bg-blue-700 transition-colors">
+                    บันทึกร่าง
+                </button>
+                <button type="button" id="view-drafts-button" class="px-6 py-2.5 bg-gray-600 text-white font-semibold rounded shadow hover:bg-gray-700 transition-colors">
+                    ดูแบบร่าง
+                </button>
+                <button type="button" id="clear-form-button" class="px-6 py-2.5 bg-white text-gray-700 border border-gray-300 font-semibold rounded shadow hover:bg-gray-50 transition-colors">
+                    ล้างฟอร์ม
+                </button>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- --- DASHBOARD --- -->
+    <div id="page-dashboard" class="page-content max-w-7xl mx-auto bg-white p-6 sm:p-8 rounded-lg shadow-lg hidden border border-gray-200">
+        <h1 class="text-2xl font-bold text-red-700 mb-6 text-center">แดชบอร์ดสรุปรายงาน</h1>
+        
+        <!-- NEW: Key Metrics Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 max-w-6xl mx-auto">
+            <!-- Total Reports -->
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-red-500 flex flex-col items-center justify-center">
+                <div class="text-gray-500 text-sm font-semibold">รายงานอุบัติเหตุทั้งหมด</div>
+                <div class="text-3xl font-bold text-gray-800 mt-2" id="stat-total-reports">0</div>
+                <div class="text-xs text-gray-400 mt-1">รายการ</div>
+            </div>
+            <!-- Total Cost -->
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500 flex flex-col items-center justify-center">
+                <div class="text-gray-500 text-sm font-semibold">มูลค่าความเสียหายรวม</div>
+                <div class="text-3xl font-bold text-gray-800 mt-2" id="stat-total-cost">0.00</div>
+                <div class="text-xs text-gray-400 mt-1">บาท</div>
+            </div>
+            <!-- Total Days Lost -->
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500 flex flex-col items-center justify-center">
+                <div class="text-gray-500 text-sm font-semibold">รวมวันหยุดงาน</div>
+                <div class="text-3xl font-bold text-gray-800 mt-2" id="stat-total-days-lost">0</div>
+                <div class="text-xs text-gray-400 mt-1">วัน</div>
+            </div>
+            <!-- Max Branch Days Lost -->
+            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500 flex flex-col items-center justify-center">
+                <div class="text-gray-500 text-sm font-semibold">สาขาที่หยุดงานสูงสุด</div>
+                <div class="text-xl font-bold text-gray-800 mt-2 text-center break-words w-full px-2" id="stat-max-branch-days">N/A</div>
+                <div class="text-xs text-gray-400 mt-1" id="stat-max-branch-days-val">0 วัน</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Existing Branch Chart -->
+            <div class="bg-gray-50 p-4 rounded-lg border shadow-sm">
+                <h2 class="text-lg font-semibold text-center mb-4 text-gray-700">สรุปตามสาขา</h2>
+                <canvas id="branchChart"></canvas>
+            </div>
+            <!-- Existing Month Chart -->
+            <div class="bg-gray-50 p-4 rounded-lg border shadow-sm">
+                <h2 class="text-lg font-semibold text-center mb-4 text-gray-700">สรุปตามเดือน (รายปี)</h2>
+                <canvas id="monthChart"></canvas>
+            </div>
+            <!-- NEW Category Chart -->
+            <div class="bg-gray-50 p-4 rounded-lg border shadow-sm">
+                <h2 class="text-lg font-semibold text-center mb-4 text-gray-700">สัดส่วนประเภทอุบัติเหตุ</h2>
+                <div class="h-64 flex justify-center">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+             <!-- NEW Top Branch Chart (Replaced Injury Chart) -->
+            <div class="bg-gray-50 p-4 rounded-lg border shadow-sm">
+                <h2 class="text-lg font-semibold text-center mb-4 text-gray-700">สาขาที่เกิดอุบัติเหตุสูงสุด (Top 5)</h2>
+                <canvas id="topBranchChart"></canvas>
+            </div>
+        </div>
+
+        <h2 class="text-lg font-semibold mb-4 border-b pb-2">รายการล่าสุด</h2>
+        <div id="dashboard-content" class="overflow-x-auto"></div>
+    </div>
+
+    <!-- --- SETTINGS --- -->
+    <div id="page-settings" class="page-content max-w-5xl mx-auto bg-white p-6 rounded-lg shadow-lg hidden border border-gray-200">
+        <h1 class="text-2xl font-bold text-red-700 mb-6 text-center">ตั้งค่าระบบ</h1>
+        <fieldset class="border border-gray-300 p-4 rounded-md">
+            <legend class="text-lg font-semibold px-2">จัดการสาขา</legend>
+            <div id="settings-message-area" class="hidden p-2 mb-2 rounded text-sm"></div>
+            <div class="flex gap-2 mt-2">
+                <input type="text" id="new-branch-name" placeholder="ชื่อสาขาใหม่" class="input-box-style flex-grow">
+                <button type="button" id="add-branch-button" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">เพิ่ม</button>
+            </div>
+            <div id="settings-branch-list-container" class="mt-4 space-y-2 border rounded-md p-4 max-h-60 overflow-y-auto bg-gray-50"></div>
+        </fieldset>
+    </div>
+
+    <!-- --- ALL REPORTS --- -->
+    <div id="page-all-reports" class="page-content max-w-[95%] mx-auto hidden">
+        <h1 class="text-2xl font-bold text-red-700 mb-4">รายงานทั้งหมด</h1>
+        <div class="flex flex-col lg:flex-row h-[calc(100vh-160px)] border rounded-lg shadow overflow-hidden">
+            <div class="w-full lg:w-[35%] flex flex-col bg-white border-r">
+                <div class="p-4 border-b bg-gray-50">
+                    <input type="text" id="all-reports-search" class="input-box-style" placeholder="🔍 ค้นหาตาม ID, สาขา, วันที่...">
+                </div>
+                <div id="all-reports-list-container" class="flex-grow overflow-y-auto p-2 space-y-2 bg-white"></div>
+            </div>
+            <div id="report-details-panel" class="hidden lg:flex w-full lg:w-[65%] flex-col bg-white relative">
+                <div class="p-3 border-b bg-gray-50 flex justify-between items-center">
+                    <h2 class="font-bold text-gray-700 flex items-center">
+                        📄 รายละเอียด
+                        <span id="details-panel-id" class="ml-2 text-red-600"></span>
+                    </h2>
+                    <div id="panel-actions-container" class="flex space-x-2">
+                        <!-- UPDATE: Edit and Delete Buttons added here -->
+                        <button id="panel-edit-button" class="hidden px-4 py-1.5 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 flex items-center gap-2 transition-colors">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                            แก้ไข
+                        </button>
+                        <button id="panel-delete-button" class="hidden px-4 py-1.5 bg-red-600 text-white text-sm rounded hover:bg-red-700 flex items-center gap-2 transition-colors">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                            ลบ
+                        </button>
+                        <button id="panel-print-button" class="hidden px-4 py-1.5 bg-gray-700 text-white text-sm rounded hover:bg-gray-800 flex items-center gap-2 transition-colors">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-14h-5.586a1 1 0 00-.707.293L10.414 6H14a1 1 0 011 1v2"/></svg>
+                            พิมพ์
+                        </button>
+                    </div>
+                </div>
+                <div id="panel-content-area" class="flex-grow overflow-y-auto p-6 bg-gray-50">
+                    <div class="h-full flex flex-col items-center justify-center text-gray-400">
+                        <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <p>เลือกรายงานจากรายการด้านซ้ายเพื่อดูรายละเอียด</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- --- DETAILS MODAL (Mobile) --- -->
+    <div id="report-details-modal" class="fixed inset-0 bg-black bg-opacity-75 z-[60] p-0 sm:p-4 hidden flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-full sm:max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b bg-white rounded-t-lg">
+                <h2 class="text-lg font-bold text-red-700">รายละเอียด / จัดการ</h2>
+                <div id="modal-actions-container" class="flex space-x-1">
+                     <!-- UPDATE: Mobile Edit/Delete Buttons -->
+                    <button id="edit-details-modal-button" class="p-2 hover:bg-blue-50 text-blue-600 rounded-full" title="แก้ไข">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                    </button>
+                    <button id="delete-details-modal-button" class="p-2 hover:bg-red-50 text-red-600 rounded-full" title="ลบ">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                    <button id="print-details-modal-button" class="p-2 hover:bg-gray-100 rounded-full text-gray-600" title="พิมพ์">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm7-14h-5.586a1 1 0 00-.707.293L10.414 6H14a1 1 0 011 1v2"/></svg>
+                    </button>
+                    <button id="close-details-modal-button" class="p-2 hover:bg-gray-100 rounded-full text-gray-600" title="ปิด">
+                        <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+            <div id="report-details-content" class="p-8 overflow-y-auto bg-white"></div>
+        </div>
+    </div>
+
+    <!-- --- SUCCESS MODAL --- -->
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-60 z-[70] hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4 text-center transform transition-all scale-100">
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
+                <svg class="h-10 w-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h3 class="text-2xl font-bold text-gray-900 mb-2">บันทึกสำเร็จ!</h3>
+            <p class="text-gray-500 mb-8">ส่งรายงานเรียบร้อยแล้ว กรุณาเลือกรายการที่ต้องการดำเนินการต่อ</p>
+            <div class="flex flex-col gap-3">
+                <!-- Removed print button -->
+                <button id="success-all-reports-btn" class="w-full flex justify-center items-center px-4 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                    รายการทั้งหมด
+                </button>
+                <button id="success-new-btn" class="w-full flex justify-center items-center px-4 py-3 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-gray-100 hover:bg-gray-200 shadow-sm transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                    ปิด / สร้างรายการใหม่
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- --- DRAFT SAVED MODAL (NEW) --- -->
+    <div id="draft-modal" class="fixed inset-0 bg-black bg-opacity-60 z-[70] hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 text-center transform transition-all scale-100">
+            <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-blue-100 mb-4">
+                <svg class="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">บันทึกร่างสำเร็จ</h3>
+            <p class="text-gray-500 mb-6 text-sm">คุณสามารถกลับมาแก้ไขข้อมูลนี้ได้ในภายหลังที่เมนู "รายการฉบับร่าง"</p>
+            <button id="close-draft-modal-btn" class="w-full flex justify-center items-center px-4 py-2 border border-transparent text-base font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm transition-colors">
+                ตกลง
+            </button>
+        </div>
+    </div>
+
+    <!-- --- DELETE CONFIRMATION MODAL --- -->
+    <div id="delete-confirm-modal" class="fixed inset-0 bg-black bg-opacity-60 z-[80] hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 text-center transform transition-all scale-100">
+            <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-red-100 mb-4">
+                <svg class="h-8 w-8 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">ยืนยันการลบ?</h3>
+            <p class="text-gray-500 mb-6 text-sm">คุณต้องการลบรายงาน <span id="delete-confirm-id" class="font-bold text-gray-800"></span> หรือไม่?<br>การกระทำนี้ไม่สามารถเรียกคืนได้</p>
+            <div class="flex gap-3 justify-center">
+                <button id="cancel-delete-btn" class="px-4 py-2 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors">
+                    ยกเลิก
+                </button>
+                <button id="confirm-delete-btn" class="px-4 py-2 border border-transparent text-base font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors flex justify-center items-center min-w-[100px]">
+                    <span id="confirm-delete-text">ลบรายงาน</span>
+                    <div id="delete-loader" class="loader h-4 w-4 rounded-full border-2 border-t-2 border-white hidden"></div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzReAzWNfLP2cirmVnWL6Vq8evpWDfmlZf3HAzC3VOtvhLE6p1wIk_LB1lHOknNLSst/exec";
+        const CLOUDINARY_CLOUD_NAME = "dsmiqo5si"; 
+        const CLOUDINARY_UPLOAD_PRESET = "Accident";
+        const DRAFT_KEY = 'accidentFormDrafts';
+
+        // --- DOM ELEMENTS ---
+        const form = document.getElementById('accident-form');
+        const submitButton = document.getElementById('submit-button');
+        const cancelEditButton = document.getElementById('cancel-edit-button');
+        const saveDraftButton = document.getElementById('save-draft-button');
+        const clearFormButton = document.getElementById('clear-form-button');
+        const viewDraftsButton = document.getElementById('view-drafts-button');
+        const buttonText = document.getElementById('button-text');
+        const buttonLoader = document.getElementById('button-loader');
+        const messageArea = document.getElementById('message-area');
+        const currentDraftIdInput = document.getElementById('current-draft-id');
+        const editReportIdInput = document.getElementById('edit-report-id');
+        const existingImageUrlInput = document.getElementById('existing-image-url');
+        const accImageInput = document.getElementById('acc-image');
+        const imagePreview = document.getElementById('image-preview');
+        const formTitle = document.getElementById('form-title');
+        
+        const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+        const menuSidebar = document.getElementById('menu-sidebar');
+        const draftSidebar = document.getElementById('draft-sidebar');
+        const draftListContainer = document.getElementById('draft-list-container');
+
+        const allPages = ['page-home', 'page-dashboard', 'page-settings', 'page-all-reports'].map(id => document.getElementById(id));
+        
+        const reportDetailsModal = document.getElementById('report-details-modal');
+        const reportDetailsContent = document.getElementById('report-details-content');
+
+        const panelContentArea = document.getElementById('panel-content-area');
+        const panelPrintButton = document.getElementById('panel-print-button');
+        const panelEditButton = document.getElementById('panel-edit-button');
+        const panelDeleteButton = document.getElementById('panel-delete-button');
+        const detailsPanelId = document.getElementById('details-panel-id');
+        
+        // Mobile Modal Buttons
+        const editDetailsModalButton = document.getElementById('edit-details-modal-button');
+        const deleteDetailsModalButton = document.getElementById('delete-details-modal-button');
+        const printDetailsModalButton = document.getElementById('print-details-modal-button');
+
+        const successModal = document.getElementById('success-modal');
+        const successAllReportsBtn = document.getElementById('success-all-reports-btn');
+        const successNewBtn = document.getElementById('success-new-btn');
+        
+        // New Draft Modal
+        const draftModal = document.getElementById('draft-modal');
+        const closeDraftModalBtn = document.getElementById('close-draft-modal-btn');
+
+        // Delete Confirm Modal
+        const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+        const deleteConfirmIdText = document.getElementById('delete-confirm-id');
+        const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+        const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+        const confirmDeleteText = document.getElementById('confirm-delete-text');
+        const deleteLoader = document.getElementById('delete-loader');
+
+        let currentReportHTML = '';
+        let currentViewingReportId = null;
+        let pendingDeleteId = null;
+        let lastSubmittedData = null;
+        let allReportsData = [];
+        let investigatorCount = 0;
+        
+        // Chart Instances
+        let branchChartInstance = null;
+        let monthChartInstance = null;
+        let categoryChartInstance = null;
+        let topBranchChartInstance = null;
+
+        // --- INITIALIZATION ---
+        // [UPDATED] ตั้งค่าวันที่ปัจจุบันทันทีเมื่อโหลดหน้า
+        document.getElementById('date-issued').valueAsDate = new Date();
+        
+        loadBranchOptions();
+        addInvestigator();
+
+        // --- EVENT LISTENERS ---
+        document.getElementById('open-menu-sidebar-button')?.addEventListener('click', () => toggleSidebar(menuSidebar, true));
+        document.getElementById('close-menu-sidebar-button')?.addEventListener('click', () => toggleSidebar(menuSidebar, false));
+        
+        // [NEW] Listeners สำหรับคำนวณเลขที่เอกสารอัตโนมัติ
+        document.getElementById('branch').addEventListener('change', updateAutoIssueNo);
+        document.getElementById('date-issued').addEventListener('change', updateAutoIssueNo);
+
+        document.getElementById('open-draft-sidebar-button')?.addEventListener('click', () => { renderDraftList(); toggleSidebar(draftSidebar, true); });
+        document.getElementById('close-draft-sidebar-button')?.addEventListener('click', () => toggleSidebar(draftSidebar, false));
+        sidebarBackdrop?.addEventListener('click', closeAllSidebars);
+        document.getElementById('main-menu')?.addEventListener('click', handleMenuClick);
+
+        form.addEventListener('submit', handleFormSubmit);
+        saveDraftButton.addEventListener('click', saveDraft);
+        clearFormButton.addEventListener('click', () => clearForm(false));
+        cancelEditButton.addEventListener('click', cancelEditMode);
+        viewDraftsButton.addEventListener('click', () => { renderDraftList(); toggleSidebar(draftSidebar, true); });
+        accImageInput.addEventListener('change', handleImagePreview);
+
+        document.getElementById('add-investigator-button').addEventListener('click', () => addInvestigator());
+        document.getElementById('investigators-container').addEventListener('click', (e) => {
+            if (e.target.closest('.remove-investigator-button')) { e.target.closest('.investigator-row').remove(); updateInvestigatorNumbers(); }
+        });
+
+        draftListContainer.addEventListener('click', (e) => {
+            const btn = e.target; const id = btn.dataset.id; if (!id) return;
+            if (btn.classList.contains('load-draft')) loadDraft(id);
+            if (btn.classList.contains('delete-draft')) deleteDraft(id);
+        });
+
+        document.getElementById('add-branch-button')?.addEventListener('click', handleAddBranch);
+        document.getElementById('settings-branch-list-container')?.addEventListener('click', (e) => {
+            if (e.target.closest('.delete-branch-button')) handleBranchAction('deleteBranch', e.target.closest('.delete-branch-button').dataset.branch);
+        });
+
+        document.getElementById('all-reports-search')?.addEventListener('keyup', handleReportSearch);
+        document.getElementById('all-reports-list-container')?.addEventListener('click', (e) => {
+            const item = e.target.closest('.report-list-item');
+            if (item) {
+                const id = item.dataset.id;
+                document.querySelectorAll('.report-list-item').forEach(el => el.classList.remove('active'));
+                item.classList.add('active');
+                if (window.innerWidth >= 1024) loadReportToPanel(id); else openReportDetailsModal(id);
+            }
+        });
+
+        // Print Handlers
+        printDetailsModalButton?.addEventListener('click', () => { document.body.classList.add('printing-modal'); window.print(); });
+        panelPrintButton?.addEventListener('click', () => { if(currentReportHTML) { reportDetailsContent.innerHTML = currentReportHTML; document.body.classList.add('printing-modal'); window.print(); } });
+        document.getElementById('close-details-modal-button')?.addEventListener('click', closeReportDetailsModal);
+        window.matchMedia('print').addEventListener('change', (mql) => { if (!mql.matches) document.body.classList.remove('printing-modal'); });
+
+        // EDIT & DELETE HANDLERS
+        panelEditButton?.addEventListener('click', () => handleEditClick(currentViewingReportId));
+        editDetailsModalButton?.addEventListener('click', () => handleEditClick(currentViewingReportId));
+        
+        panelDeleteButton?.addEventListener('click', () => handleDeleteClick(currentViewingReportId));
+        deleteDetailsModalButton?.addEventListener('click', () => handleDeleteClick(currentViewingReportId));
+
+        // DELETE MODAL HANDLERS
+        cancelDeleteBtn.addEventListener('click', () => {
+            deleteConfirmModal.classList.add('hidden');
+            pendingDeleteId = null;
+        });
+        confirmDeleteBtn.addEventListener('click', confirmDeleteAction);
+
+
+        // Success Modal Actions
+        successAllReportsBtn.addEventListener('click', () => {
+            successModal.classList.add('hidden');
+            cancelEditMode(); // Reset edit mode if any
+            clearForm(true);
+            document.querySelectorAll('.menu-link').forEach(l => l.classList.remove('active'));
+            const link = document.querySelector('.menu-link[data-page="all-reports"]');
+            if(link) link.classList.add('active');
+            allPages.forEach(p => p.classList.add('hidden'));
+            document.getElementById('page-all-reports').classList.remove('hidden');
+            loadAllReportsList();
+        });
+        successNewBtn.addEventListener('click', () => {
+            successModal.classList.add('hidden');
+            cancelEditMode(); // Reset edit mode if any
+            clearForm(false);
+        });
+        
+        // Draft Modal Action
+        closeDraftModalBtn.addEventListener('click', () => draftModal.classList.add('hidden'));
+
+        // --- LOGIC FUNCTIONS ---
+
+        function toggleSidebar(sidebar, show) {
+            if (!sidebar) return;
+            if (show) closeAllSidebars(false); 
+            if (sidebar.id === 'menu-sidebar') sidebar.classList.toggle('-translate-x-full', !show);
+            else sidebar.classList.toggle('translate-x-full', !show);
+            if (show) sidebarBackdrop.classList.remove('hidden'); else sidebarBackdrop.classList.add('hidden');
+        }
+
+        function closeAllSidebars(hideBackdrop = true) {
+            menuSidebar.classList.add('-translate-x-full');
+            draftSidebar.classList.add('translate-x-full');
+            if (hideBackdrop) sidebarBackdrop.classList.add('hidden');
+        }
+
+        function handleMenuClick(e) {
+            const link = e.target.closest('.menu-link'); if (!link) return; e.preventDefault();
+            document.querySelectorAll('.menu-link').forEach(l => l.classList.remove('active')); link.classList.add('active');
+            const pageId = link.dataset.page;
+            allPages.forEach(p => p.classList.add('hidden'));
+            const target = document.getElementById(`page-${pageId}`);
+            if (target) target.classList.remove('hidden');
+            if (pageId === 'dashboard') loadDashboardData();
+            if (pageId === 'all-reports') loadAllReportsList();
+            if (pageId === 'settings') loadSettingsBranchList();
+            if (window.innerWidth < 1024) closeAllSidebars();
+        }
+
+        async function handleFormSubmit(e) {
+            e.preventDefault();
+            if (!document.getElementById('branch').value) return showMessage('กรุณาเลือกสาขา', 'error');
+            setLoading(true);
+            
+            const isEditMode = !!editReportIdInput.value;
+            const dataObject = getFormDataObject();
+            dataObject.action = isEditMode ? 'updateReport' : 'saveReport';
+            
+            if(isEditMode) {
+                dataObject.reportId = editReportIdInput.value;
+                // Keep existing image if no new file uploaded
+                if (!accImageInput.files[0] && existingImageUrlInput.value) {
+                    dataObject.imageUrl = existingImageUrlInput.value;
+                }
+            }
+
+            const file = accImageInput.files[0];
+            try {
+                if (file) {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+                    try {
+                        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: 'POST', body: formData });
+                        const json = await res.json();
+                        if (json.secure_url) dataObject.imageUrl = json.secure_url;
+                    } catch (imgErr) { console.error("Image upload failed:", imgErr); }
+                }
+                
+                const res = await fetch(WEB_APP_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(dataObject) });
+                const textResult = await res.text();
+                let result; try { result = JSON.parse(textResult); } catch (jsonErr) { throw new Error("Server response invalid: " + textResult.substring(0, 100)); }
+                
+                if (result.status === 'success') {
+                    if (dataObject.currentDraftId) deleteDraft(dataObject.currentDraftId, true);
+                    lastSubmittedData = dataObject;
+                    allReportsData = []; 
+                    successModal.classList.remove('hidden');
+                    
+                    // Update modal text based on action
+                    const successTitle = successModal.querySelector('h3');
+                    successTitle.textContent = isEditMode ? 'บันทึกการแก้ไขสำเร็จ!' : 'บันทึกสำเร็จ!';
+                } else { throw new Error(result.message); }
+            } catch (err) { showMessage('Error: ' + err.message, 'error'); } finally { setLoading(false); }
+        }
+
+        function getFormDataObject() {
+            const formData = new FormData(form); const obj = { investigators: [] };
+            formData.forEach((v, k) => { if (!k.startsWith('inv') && k !== 'accImage') obj[k] = v; });
+            document.querySelectorAll('.investigator-row').forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                const inv = { invName: inputs[0].value, invDept: inputs[1].value, invPosition: inputs[2].value, invSignature: inputs[3].value };
+                if (inv.invName) obj.investigators.push(inv);
+            });
+            return obj;
+        }
+
+        // --- EDIT / DELETE LOGIC ---
+
+        async function handleEditClick(id) {
+            if(!id) return;
+            closeReportDetailsModal();
+            
+            // Find report data locally first
+            const report = allReportsData.find(r => r.ReportID == id);
+            
+            // Show loading
+            allPages.forEach(p => p.classList.add('hidden'));
+            document.getElementById('page-home').classList.remove('hidden');
+            
+            // Populate form
+            if (report) {
+                populateFormForEdit(report);
+            } else {
+                // Fetch if not in local list (rare)
+                showMessage('กำลังดึงข้อมูล...', 'info');
+                try {
+                    const res = await fetch(`${WEB_APP_URL}?action=getReportDetails&id=${encodeURIComponent(id)}`);
+                    const json = await res.json();
+                    if (json.status === 'success') {
+                        const fullData = {...json.data.report, investigators: json.data.investigators};
+                        populateFormForEdit(fullData);
+                    }
+                } catch(e) { showMessage('โหลดข้อมูลไม่สำเร็จ', 'error'); }
+            }
+        }
+
+        function populateFormForEdit(data) {
+            // Reset form first
+            form.reset();
+            document.getElementById('investigators-container').innerHTML = '';
+            
+            // Set ID and Edit Mode UI
+            editReportIdInput.value = data.ReportID || data.id; // Handle case sensitivity if needed
+            existingImageUrlInput.value = data.imageUrl || '';
+            
+            cancelEditButton.classList.remove('hidden');
+            buttonText.textContent = 'บันทึกการแก้ไข';
+            formTitle.textContent = `แก้ไขรายงาน #${editReportIdInput.value}`;
+            formTitle.classList.add('text-red-600');
+
+            // Map fields
+            const keys = Object.keys(data);
+            keys.forEach(key => {
+                const input = form.querySelector(`[name="${key}"]`);
+                if (input) {
+                   if(input.type === 'date' && data[key]) {
+                        input.value = data[key].split(' ')[0];
+                   } else if (input.type !== 'file') {
+                       input.value = data[key];
+                   }
+                }
+            });
+
+            // Handle Image Preview
+            if (data.imageUrl && !data.imageUrl.startsWith('Error')) {
+                imagePreview.src = data.imageUrl;
+                imagePreview.classList.remove('hidden');
+            } else {
+                imagePreview.classList.add('hidden');
+            }
+
+            // Handle Investigators
+            let investigators = data.investigators;
+            if (typeof investigators === 'string') {
+                try { investigators = JSON.parse(investigators); } catch(e) { investigators = []; }
+            }
+            if (Array.isArray(investigators) && investigators.length > 0) {
+                investigators.forEach(inv => addInvestigator(inv));
+            } else {
+                addInvestigator();
+            }
+
+            // Switch Menu Active
+            document.querySelectorAll('.menu-link').forEach(l => l.classList.remove('active'));
+            document.querySelector('.menu-link[data-page="home"]').classList.add('active');
+            
+            showMessage(`กำลังแก้ไขรายงาน #${editReportIdInput.value}`, 'info');
+            window.scrollTo(0,0);
+        }
+
+        function cancelEditMode() {
+            clearForm(true);
+            editReportIdInput.value = '';
+            existingImageUrlInput.value = '';
+            cancelEditButton.classList.add('hidden');
+            buttonText.textContent = 'ส่งรายงาน';
+            formTitle.textContent = 'Accident Report';
+            formTitle.classList.remove('text-red-600');
+        }
+
+        // Modified: Show Modal instead of window.confirm
+        function handleDeleteClick(id) {
+            if(!id) return;
+            pendingDeleteId = id;
+            deleteConfirmIdText.textContent = `#${id}`;
+            deleteConfirmModal.classList.remove('hidden');
+        }
+
+        async function confirmDeleteAction() {
+            if (!pendingDeleteId) return;
+            
+            // Set loading state in modal
+            confirmDeleteBtn.disabled = true;
+            confirmDeleteText.classList.add('hidden');
+            deleteLoader.classList.remove('hidden');
+
+            try {
+                const res = await fetch(WEB_APP_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({ action: 'deleteReport', reportId: pendingDeleteId })
+                });
+                const json = await res.json();
+                if(json.status === 'success') {
+                    showMessage('ลบข้อมูลสำเร็จ', 'success');
+                    closeReportDetailsModal();
+                    deleteConfirmModal.classList.add('hidden');
+
+                    allReportsData = allReportsData.filter(r => r.ReportID != pendingDeleteId); // Local update
+                    
+                    // Clear detail panel
+                    panelContentArea.innerHTML = '<div class="h-full flex items-center justify-center text-gray-400"><p>เลือกรายงานจากรายการด้านซ้ายเพื่อดูรายละเอียด</p></div>';
+                    detailsPanelId.textContent = '';
+                    panelPrintButton.classList.add('hidden');
+                    panelEditButton.classList.add('hidden');
+                    panelDeleteButton.classList.add('hidden');
+                    
+                    // Refresh list
+                    renderAllReportsList(allReportsData);
+                    // If list empty fetch again
+                    if(allReportsData.length === 0) loadAllReportsList();
+                } else {
+                    alert('เกิดข้อผิดพลาด: ' + json.message);
+                }
+            } catch(e) {
+                alert('ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์');
+            } finally {
+                // Reset loading state
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteText.classList.remove('hidden');
+                deleteLoader.classList.add('hidden');
+                pendingDeleteId = null;
+            }
+        }
+
+        // --- VIEWING LOGIC ---
+
+        async function loadReportToPanel(id) {
+            currentViewingReportId = id;
+            panelContentArea.innerHTML = '<div class="flex h-full items-center justify-center"><div class="loader h-10 w-10 rounded-full border-2 border-t-red-600"></div></div>';
+            detailsPanelId.textContent = `#${id}`; 
+            panelPrintButton.classList.add('hidden');
+            panelEditButton.classList.add('hidden');
+            panelDeleteButton.classList.add('hidden');
+
+            try {
+                const res = await fetch(`${WEB_APP_URL}?action=getReportDetails&id=${encodeURIComponent(id)}`);
+                const json = await res.json();
+                if (json.status === 'success') {
+                    const html = generateReportHTML(json.data);
+                    currentReportHTML = html; 
+                    panelContentArea.innerHTML = html; 
+                    panelPrintButton.classList.remove('hidden');
+                    panelEditButton.classList.remove('hidden');
+                    panelDeleteButton.classList.remove('hidden');
+                } else throw new Error(json.message);
+            } catch (err) { panelContentArea.innerHTML = `<div class="h-full flex items-center justify-center text-red-600">${err.message}</div>`; }
+        }
+
+        async function openReportDetailsModal(id) {
+            currentViewingReportId = id;
+            reportDetailsModal.classList.remove('hidden');
+            reportDetailsContent.innerHTML = '<div class="flex justify-center p-10"><div class="loader h-10 w-10 rounded-full border-2 border-t-red-600"></div></div>';
+            try {
+                const res = await fetch(`${WEB_APP_URL}?action=getReportDetails&id=${encodeURIComponent(id)}`);
+                const json = await res.json();
+                if (json.status === 'success') {
+                    const html = generateReportHTML(json.data);
+                    currentReportHTML = html; reportDetailsContent.innerHTML = html;
+                } else throw new Error(json.message);
+            } catch (err) { reportDetailsContent.innerHTML = `<p class="text-red-600 text-center">${err.message}</p>`; }
+        }
+
+        function generateReportHTML(data) {
+            const r = data.report;
+            let inv = data.investigators || [];
+            if (typeof inv === 'string') try { inv = JSON.parse(inv); } catch (e) { inv = []; }
+
+            const box = (val, center = false, noBorder = false) => `
+                <div class="input-box-style ${center ? 'text-center justify-center' : ''} ${noBorder ? 'print-no-border' : ''} flex items-start bg-[#f0f0f0] break-words break-all px-2 py-0.5 h-auto !min-h-0">
+                    ${val || '-'}
+                </div>
+            `;
+            const textBox = (val, noBorder = false) => `
+                <div class="input-box-style ${noBorder ? 'print-no-border' : ''} bg-[#f0f0f0] p-2 min-h-[8rem] whitespace-pre-wrap break-words break-all">
+                    ${val || '-'}
+                </div>
+            `;
+            const dateFmt = (d) => d ? d.split(' ')[0] : '-';
+            const formatTime = (t) => t ? (t.match(/\d{2}:\d{2}/) || [t])[0] : '-';
+
+            return `
+                <div class="max-w-4xl mx-auto font-sarabun">
+                    <!-- Header: Removed border-b and reduced margin -->
+                    <div class="mb-2 pb-0 relative">
+                         <div class="flex flex-col items-center relative">
+                             <!-- Logo absolute left -->
+                            <div class="w-full flex justify-center sm:justify-start mb-1 sm:absolute sm:top-0 sm:left-0 sm:w-auto sm:mb-0">
+                                <img src="https://raw.githubusercontent.com/mm12346/AccidentReport/refs/heads/main/global.png" 
+                                     class="h-16 w-auto object-contain">
+                            </div>
+                            <div class="text-center sm:pt-2 w-full">
+                                <h1 class="text-2xl font-bold mb-0 text-gray-900">Accident Report</h1>
+                                <p class="text-base text-gray-700 leading-tight">แบบฟอร์มรายงานการสอบสวนอุบัติเหตุ</p>
+                                <p class="text-base text-gray-700 leading-tight">บริษัท สยามโกลบอลเฮ้าส์ จำกัด (มหาชน)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- --- HEADER LAYOUT (Tight Spacing) --- -->
+                    <div class="mb-4 text-sm border-b pb-2">
+                        
+                        <!-- Row 1: Branch & Issue No -->
+                        <div class="flex flex-wrap justify-center gap-4 mb-1">
+                             <div class="flex items-center gap-2">
+                                <span class="font-bold whitespace-nowrap">สาขา:</span>
+                                <div class="w-40">${box(r.branch, false, true)}</div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold whitespace-nowrap">ครั้งที่:</span>
+                                <div class="w-24">${box(r.issueNo, true, true)}</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Row 2: Date Issued (Center) -->
+                        <div class="flex justify-center items-center mb-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold whitespace-nowrap">วันที่จัดทำ:</span>
+                                <div class="w-32">${box(dateFmt(r.dateIssued), true, true)}</div>
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Category & Affected -->
+                        <div class="flex flex-wrap justify-center gap-4">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold whitespace-nowrap">ประเภทอุบัติเหตุ:</span>
+                                <div class="w-40">${box(r.accidentCategory, false, true)}</div>
+                            </div>
+                             <div class="flex items-center gap-2">
+                                <span class="font-bold whitespace-nowrap">ผู้ได้รับผลกระทบ:</span>
+                                <div class="w-40">${box(r.affectedPersonType, false, true)}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section 1 -->
+                    <div class="mb-6">
+                        <h2 class="section-header">ส่วนที่ 1: ข้อมูลการเกิดอุบัติเหตุ</h2>
+                        
+                        <div class="space-y-2 text-sm">
+                            <!-- Date & Time -->
+                            <div class="grid grid-cols-2 gap-4">
+                                 <div class="flex items-center gap-2">
+                                    <span class="font-bold w-24 flex-shrink-0">วันที่เกิดเหตุ:</span>
+                                    <div class="flex-grow">${box(dateFmt(r.accDate), false, true)}</div>
+                                 </div>
+                                 <div class="flex items-center gap-2">
+                                    <span class="font-bold w-16 flex-shrink-0 text-right">เวลา:</span>
+                                    <div class="w-32">${box(formatTime(r.accTime), true, true)}</div>
+                                 </div>
+                            </div>
+
+                            <!-- Location -->
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold w-24 flex-shrink-0">สถานที่:</span>
+                                <div class="flex-grow">${box(r.accLocation, false, true)}</div>
+                            </div>
+
+                            <!-- Vertical Stack items (Matching Form Layout) -->
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold w-32 flex-shrink-0">ขั้นตอน/กิจกรรม:</span>
+                                <div class="flex-grow">${box(r.accActivity, false, true)}</div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold w-32 flex-shrink-0">เครื่องมือ/เครื่องจักร:</span>
+                                <div class="flex-grow">${box(r.accMachine, false, true)}</div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold w-32 flex-shrink-0">PPE ที่สวมใส่:</span>
+                                <div class="flex-grow">${box(r.accPPE, false, true)}</div>
+                            </div>
+                             <div class="flex items-center gap-2">
+                                <span class="font-bold w-32 flex-shrink-0">ลักษณะอุบัติเหตุ:</span>
+                                <div class="flex-grow">${box(r.accType, false, true)}</div>
+                            </div>
+
+                            <!-- Details -->
+                            <div class="mt-2">
+                                <p class="font-bold mb-1">รายละเอียด (ใคร, ทำอะไร, ที่ไหน, เมื่อไหร่, อย่างไร):</p>
+                                ${textBox(r.accDetails, true)}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Image -->
+                    <div class="mb-6 page-break-inside-avoid">
+                        <h2 class="section-header">รูปเหตุการณ์</h2>
+                        <div class="border border-gray-300 h-[250px] flex items-center justify-center bg-gray-50 rounded overflow-hidden">
+                            ${r.imageUrl && !r.imageUrl.startsWith('Error') ? `<img src="${r.imageUrl}" class="h-full w-full object-contain">` : `<span class="text-gray-400 italic">ไม่มีรูปภาพ</span>`}
+                        </div>
+                    </div>
+
+                    <!-- Prevention & Witness -->
+                    <div class="mb-6">
+                         <div class="mb-4">
+                            <h2 class="section-header">วิธีการป้องกันแก้ไขหลังเกิดอุบัติเหตุ</h2>
+                            ${box(r.accPrevention, false, true)}
+                         </div>
+                         
+                         <div>
+                            <h2 class="section-header">พยานผู้พบเห็นเหตุการณ์</h2>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold">ชื่อ-สกุล พยาน:</span>
+                                    <div class="flex-grow">${box(r.accWitness, false, true)}</div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold">แผนก:</span>
+                                    <div class="flex-grow">${box(r.accWitnessDept, false, true)}</div>
+                                </div>
+                            </div>
+                         </div>
+                    </div>
+                    
+                    <div class="print-page-break"></div>
+
+                    <!-- Section 2 -->
+                    <div class="mb-6">
+                        <h2 class="section-header">ส่วนที่ 2: ความเสียหาย</h2>
+                        <div class="grid grid-cols-3 gap-4 mb-4 text-sm">
+                            <div class="col-span-2">
+                                <span class="font-bold block mb-1">ผู้ได้รับบาดเจ็บ:</span>
+                                ${box(r.victimName)}
+                            </div>
+                            <div>
+                                <span class="font-bold block mb-1">รหัสพนักงาน:</span>
+                                ${box(r.victimId)}
+                            </div>
+                            
+                            <div>
+                                <span class="font-bold block mb-1">อายุ:</span>
+                                ${box(r.victimAge)}
+                            </div>
+                            <div>
+                                <span class="font-bold block mb-1">อายุงาน (ปี):</span>
+                                ${box(r.victimWorkYears)}
+                            </div>
+                            <div>
+                                <span class="font-bold block mb-1">แผนก/สังกัด:</span>
+                                ${box(r.victimDept)}
+                            </div>
+                            
+                            <!-- SPLIT REPORT FIELDS -->
+                            <div class="col-span-1">
+                                <span class="font-bold block mb-1">อวัยวะที่บาดเจ็บ:</span>
+                                ${box(r.victimInjuryOrgan)}
+                            </div>
+                            <div class="col-span-2">
+                                <span class="font-bold block mb-1">ลักษณะการบาดเจ็บ:</span>
+                                ${box(r.victimInjuryType)}
+                            </div>
+                            <!-- END SPLIT REPORT FIELDS -->
+                            
+                            <div class="col-span-2">
+                                <span class="font-bold block mb-1">การรักษา:</span>
+                                ${box(r.victimTreatment)}
+                            </div>
+                            <div>
+                                <span class="font-bold block mb-1">หยุดงาน (วัน):</span>
+                                ${box(r.victimDaysLost)}
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-3 gap-4 text-sm border-t pt-4">
+                            <div>
+                                <span class="font-bold block mb-1">มูลค่าความเสียหาย (บาท):</span>
+                                ${box(r.damageCost)}
+                            </div>
+                            <div class="col-span-2">
+                                <span class="font-bold block mb-1">รายละเอียดความเสียหายอื่นๆ:</span>
+                                ${box(r.damageDetails)}
+                            </div>
+                         </div>
+                    </div>
+
+                    <!-- Section 3 -->
+                     <div class="mb-6">
+                        <h2 class="section-header">ส่วนที่ 3: การวิเคราะห์สาเหตุ</h2>
+                        <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+                            <div>
+                                <span class="font-bold block mb-1">การกระทำที่ไม่ปลอดภัย (Unsafe Act):</span>
+                                ${textBox(r.causeUnsafeAct)}
+                            </div>
+                            <div>
+                                <span class="font-bold block mb-1">สภาพการณ์ที่ไม่ปลอดภัย (Unsafe Condition):</span>
+                                ${textBox(r.causeUnsafeCondition)}
+                            </div>
+                        </div>
+                         <div class="text-sm">
+                            <span class="font-bold block mb-1">แนวทางแก้ไข/ป้องกันการเกิดซ้ำ:</span>
+                            ${box(r.causeCorrection, false, true)}
+                        </div>
+                    </div>
+
+                    <!-- Section 4 -->
+                    <div class="mb-6">
+                        <h2 class="section-header">ส่วนที่ 4: ความคิดเห็นเพิ่มเติม</h2>
+                        <div class="space-y-2 text-sm">
+                             <div class="flex items-center gap-2">
+                                <span class="font-bold w-48 flex-shrink-0">ข้อเสนอแนะเพื่อการป้องกัน:</span> 
+                                <div class="flex-grow">${box(r.opinionPrevention, false, true)}</div>
+                             </div>
+                             <div class="flex items-center gap-2">
+                                <span class="font-bold w-48 flex-shrink-0">ความเห็นผู้ประสบเหตุ:</span> 
+                                <div class="flex-grow">${box(r.opinionVictim, false, true)}</div>
+                             </div>
+                             <div class="flex items-center gap-2">
+                                <span class="font-bold w-48 flex-shrink-0">ความเห็น จป./Loss Prevention:</span> 
+                                <div class="flex-grow">${box(r.opinionSafety, false, true)}</div>
+                             </div>
+                             <div class="flex items-center gap-2">
+                                <span class="font-bold w-48 flex-shrink-0">บทลงโทษ (ถ้ามี):</span> 
+                                <div class="flex-grow">${box(r.penalty, false, true)}</div>
+                             </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2 page-break-inside-avoid">
+                        <h2 class="section-header">ผู้เข้าร่วมการสอบสวน</h2>
+                        <div class="mt-2">
+                            <table class="w-full text-sm border-collapse bg-gray-50 print-bg-gray">
+                                <thead>
+                                    <tr class="bg-gray-200 border-b border-gray-300">
+                                        <th class="p-2 text-left w-10">#</th>
+                                        <th class="p-2 text-left">ชื่อ-สกุล</th>
+                                        <th class="p-2 text-left">แผนก</th>
+                                        <th class="p-2 text-left">ตำแหน่ง</th>
+                                        <th class="p-2 text-right w-40">ลายเซ็น</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${Array.isArray(inv) && inv.length > 0 ? 
+                                        inv.map((i, idx) => `
+                                            <tr class="border-b border-gray-200">
+                                                <td class="p-2 text-center">${idx+1}</td>
+                                                <td class="p-2 font-medium">${i.invName || i.InvName || '-'}</td>
+                                                <td class="p-2">${i.invDept || '-'}</td>
+                                                <td class="p-2">${i.invPosition || i.InvPosition || '-'}</td>
+                                                <td class="p-2 text-right italic text-gray-400">...................................</td>
+                                            </tr>
+                                        `).join('') : '<tr><td colspan="5" class="p-4 text-center italic text-gray-400">ไม่มีรายชื่อผู้เข้าร่วม</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function closeReportDetailsModal() { reportDetailsModal.classList.add('hidden'); reportDetailsContent.innerHTML = ''; }
+        function addInvestigator(data = {}) {
+            investigatorCount++;
+            const div = document.createElement('div');
+            div.className = 'investigator-row grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 items-end p-2 border-b bg-gray-50 rounded';
+            // Added required attributes to Name, Dept, Position
+            div.innerHTML = `<div class="md:col-span-2"><label class="text-xs font-bold text-gray-500">ชื่อ-สกุล <span class="text-red-500">*</span></label><input type="text" class="input-box-style" value="${data.invName||''}" required></div><div><label class="text-xs font-bold text-gray-500">แผนก <span class="text-red-500">*</span></label><input type="text" class="input-box-style" value="${data.invDept||''}" required></div><div><label class="text-xs font-bold text-gray-500">ตำแหน่ง <span class="text-red-500">*</span></label><input type="text" class="input-box-style" value="${data.invPosition||''}" required></div><div class="relative"><label class="text-xs font-bold text-gray-500">ลงชื่อ</label><input type="text" class="input-box-style pr-8 bg-gray-100 text-gray-400" value="${data.invSignature||''}" disabled placeholder="ลงชื่อในเอกสารจริง"><button type="button" class="remove-investigator-button absolute right-0 bottom-0 p-2 text-red-500 hover:text-red-700 font-bold">×</button></div>`;
+            document.getElementById('investigators-container').appendChild(div);
+            updateInvestigatorNumbers();
+        }
+        function updateInvestigatorNumbers() { document.querySelectorAll('.investigator-row').forEach((row, i) => { row.querySelector('.remove-investigator-button').style.display = document.querySelectorAll('.investigator-row').length > 1 ? 'block' : 'none'; }); }
+        function handleImagePreview(e) { const file = e.target.files[0]; if (file) { const reader = new FileReader(); reader.onload = (ev) => { imagePreview.src = ev.target.result; imagePreview.classList.remove('hidden'); }; reader.readAsDataURL(file); } else { imagePreview.classList.add('hidden'); } }
+        function showMessage(msg, type) { messageArea.textContent = msg; messageArea.className = `p-4 mb-4 rounded-md font-medium ${type === 'error' ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`; messageArea.classList.remove('hidden'); setTimeout(() => messageArea.classList.add('hidden'), 5000); }
+        function setLoading(isLoading) { submitButton.disabled = isLoading; if (isLoading) { buttonText.classList.add('hidden'); buttonLoader.classList.remove('hidden'); } else { buttonText.classList.remove('hidden'); buttonLoader.classList.add('hidden'); } }
+        async function loadBranchOptions() { try { const res = await fetch(`${WEB_APP_URL}?action=getBranches`); const json = await res.json(); if (json.status === 'success') { const s = document.getElementById('branch'); s.innerHTML = '<option value="">-- เลือก --</option>'; json.data.forEach(b => { const o = document.createElement('option'); o.value = b; o.textContent = b; s.appendChild(o); }); } } catch (e) { console.error(e); } }
+        function clearForm(silent) { form.reset(); currentDraftIdInput.value = ''; imagePreview.classList.add('hidden'); document.getElementById('investigators-container').innerHTML = ''; addInvestigator(); if (!silent) showMessage('ล้างข้อมูลแล้ว', 'success'); }
+        
+        // Drafts
+        function getAllDrafts() { return JSON.parse(localStorage.getItem(DRAFT_KEY) || '[]'); }
+        function saveDraft() { 
+            if(!document.getElementById('branch').value) return showMessage('เลือกสาขาก่อน', 'error'); 
+            const data = getFormDataObject(); 
+            const drafts = getAllDrafts(); 
+            const id = currentDraftIdInput.value || Date.now().toString(); 
+            const name = `${data.branch} - ${data.accDate || 'ไม่มีวันที่'}`; 
+            const idx = drafts.findIndex(d => d.id === id); 
+            if(idx > -1) drafts[idx] = {id, name, data}; 
+            else drafts.push({id, name, data}); 
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts)); 
+            currentDraftIdInput.value = id; 
+            
+            // Show Modal instead of simple message
+            draftModal.classList.remove('hidden');
+        }
+        
+        function renderDraftList() { const drafts = getAllDrafts().sort((a,b) => b.id - a.id); draftListContainer.innerHTML = drafts.length ? '' : '<p class="text-gray-400 text-center">ว่างเปล่า</p>'; drafts.forEach(d => { const el = document.createElement('div'); el.className = 'flex justify-between items-center p-3 bg-gray-50 border rounded mb-2'; el.innerHTML = `<span class="truncate w-32 text-sm">${d.name}</span><div class="flex gap-1"><button data-id="${d.id}" class="load-draft px-2 py-1 bg-blue-500 text-white text-xs rounded">โหลด</button><button data-id="${d.id}" class="delete-draft px-2 py-1 bg-red-500 text-white text-xs rounded">ลบ</button></div>`; draftListContainer.appendChild(el); }); }
+        function loadDraft(id) { const d = getAllDrafts().find(x => x.id === id); if(!d) return; clearForm(true); Object.keys(d.data).forEach(k => { if(k!=='investigators') { const el = form.querySelector(`[name="${k}"]`); if(el) el.value = d.data[k]; } }); document.getElementById('investigators-container').innerHTML = ''; if(d.data.investigators?.length) d.data.investigators.forEach(addInvestigator); else addInvestigator(); currentDraftIdInput.value = id; toggleSidebar(draftSidebar, false); showMessage('โหลดร่างแล้ว', 'success'); }
+        function deleteDraft(id, silent) { const drafts = getAllDrafts().filter(x => x.id !== id); localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts)); if(!silent) { renderDraftList(); showMessage('ลบแล้ว', 'success'); } }
+        
+        // Dashboard
+        async function loadDashboardData() { document.getElementById('dashboard-content').innerHTML = '<p>Loading...</p>'; try { const res = await fetch(`${WEB_APP_URL}?action=getReports`); const json = await res.json(); if(json.status === 'success') { allReportsData = json.data; renderDashboardTable(json.data.slice(0,10)); processChartData(json.data); } } catch(e) { console.error(e); } }
+        function renderDashboardTable(data) { let html = `<table class="min-w-full divide-y divide-gray-200 text-sm"><thead><tr class="bg-gray-50"><th class="px-4 py-2 text-left">ID</th><th class="px-4 py-2 text-left">วันที่</th><th class="px-4 py-2 text-left">สาขา</th><th class="px-4 py-2 text-left">สถานที่</th></tr></thead><tbody class="divide-y divide-gray-200">`; data.forEach(r => { html += `<tr><td class="px-4 py-2">${r.ReportID}</td><td class="px-4 py-2">${r.accDate?.split(' ')[0]||'-'}</td><td class="px-4 py-2">${r.branch}</td><td class="px-4 py-2">${r.accLocation}</td></tr>`; }); html += '</tbody></table>'; document.getElementById('dashboard-content').innerHTML = html; }
+        
+        function processChartData(data) {
+            // 1. Calculate Key Metrics
+            const totalReports = data.length;
+            const totalCost = data.reduce((sum, r) => sum + (parseFloat(r.damageCost) || 0), 0);
+            
+            // New Calculations
+            let totalDaysLost = 0;
+            const branchDaysMap = {};
+
+            data.forEach(r => {
+                // ... existing aggregation ...
+
+                // Days Lost
+                const days = parseFloat(r.victimDaysLost) || 0;
+                totalDaysLost += days;
+
+                // Branch Days
+                const b = r.branch || 'ไม่ระบุ';
+                branchDaysMap[b] = (branchDaysMap[b] || 0) + days;
+            });
+
+            // Find Max Branch Days
+            let maxBranchName = '-';
+            let maxBranchVal = 0;
+            for (const [b, d] of Object.entries(branchDaysMap)) {
+                if (d > maxBranchVal) {
+                    maxBranchVal = d;
+                    maxBranchName = b;
+                }
+            }
+            
+            document.getElementById('stat-total-reports').innerText = totalReports;
+            document.getElementById('stat-total-cost').innerText = totalCost.toLocaleString('th-TH', {minimumFractionDigits: 2});
+
+            // New DOM updates
+            document.getElementById('stat-total-days-lost').innerText = totalDaysLost;
+            document.getElementById('stat-max-branch-days').innerText = maxBranchName;
+            document.getElementById('stat-max-branch-days-val').innerText = `${maxBranchVal} วัน`;
+
+
+            // 2. Aggregate Data
+            const branches = {};
+            const months = Array(12).fill(0);
+            const categories = {};
+
+            data.forEach(r => {
+                // Branch
+                const b = r.branch || 'ไม่ระบุ';
+                branches[b] = (branches[b] || 0) + 1;
+                
+                // Month
+                if (r.accDate) {
+                    try { months[new Date(r.accDate).getMonth()]++; } catch(e){}
+                }
+
+                // Category
+                const c = r.accidentCategory || 'ไม่ระบุ';
+                categories[c] = (categories[c] || 0) + 1;
+            });
+
+            // Sort Branches for Top 5
+            const sortedBranches = Object.entries(branches).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+            // 3. Render Charts
+
+            // Branch Chart (Doughnut)
+            if(branchChartInstance) branchChartInstance.destroy();
+            branchChartInstance = new Chart(document.getElementById('branchChart'), {
+                type: 'doughnut',
+                data: { 
+                    labels: Object.keys(branches), 
+                    datasets: [{ 
+                        data: Object.values(branches), 
+                        backgroundColor: ['#EF4444','#3B82F6','#10B981','#F59E0B', '#8B5CF6', '#EC4899'] 
+                    }] 
+                }
+            });
+
+            // Month Chart (Bar)
+            if(monthChartInstance) monthChartInstance.destroy();
+            monthChartInstance = new Chart(document.getElementById('monthChart'), {
+                type: 'bar',
+                data: { 
+                    labels: ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'], 
+                    datasets: [{ 
+                        label: 'จำนวนเคส', 
+                        data: months, 
+                        backgroundColor: '#3B82F6' 
+                    }] 
+                }
+            });
+
+            // Category Chart (Pie)
+            if(categoryChartInstance) categoryChartInstance.destroy();
+            categoryChartInstance = new Chart(document.getElementById('categoryChart'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(categories),
+                    datasets: [{
+                        data: Object.values(categories),
+                        backgroundColor: ['#10B981', '#F59E0B', '#EF4444', '#6B7280']
+                    }]
+                }
+            });
+
+            // NEW: Top Branch Chart (Horizontal Bar) - Replaces Injury Chart
+            if(topBranchChartInstance) topBranchChartInstance.destroy();
+            topBranchChartInstance = new Chart(document.getElementById('topBranchChart'), {
+                type: 'bar',
+                options: {
+                    indexAxis: 'y', // Horizontal bar
+                    responsive: true,
+                    plugins: {
+                        legend: { display: false }, // Hide legend for cleaner look since label is obvious
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.x + ' ครั้ง';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { precision: 0 } }
+                    }
+                },
+                data: {
+                    labels: sortedBranches.map(item => item[0]),
+                    datasets: [{
+                        label: 'จำนวนครั้ง',
+                        data: sortedBranches.map(item => item[1]),
+                        backgroundColor: '#EF4444', // Use Red theme
+                        borderColor: '#B91C1C',
+                        borderWidth: 1
+                    }]
+                }
+            });
+        }
+        
+        // All Reports
+        async function loadAllReportsList() { if(allReportsData.length) return renderAllReportsList(allReportsData); const res = await fetch(`${WEB_APP_URL}?action=getReports`); const json = await res.json(); if(json.status==='success') { allReportsData=json.data; renderAllReportsList(allReportsData); } }
+        function renderAllReportsList(data) { const c = document.getElementById('all-reports-list-container'); c.innerHTML = data.map(r => `<div class="report-list-item p-3 bg-white border-b hover:bg-gray-50 cursor-pointer flex flex-col" data-id="${r.ReportID}"><div class="flex justify-between"><span class="font-bold text-red-700">${r.ReportID}</span><span class="text-gray-500 text-xs">${r.accDate?.split(' ')[0]}</span></div><span class="text-gray-800 text-sm">${r.branch}</span><span class="text-gray-500 text-xs truncate">${r.accLocation || '-'}</span></div>`).join(''); }
+        function handleReportSearch() { const q = this.value.toLowerCase(); const filtered = allReportsData.filter(r => JSON.stringify(r).toLowerCase().includes(q)); renderAllReportsList(filtered); }
+        
+        // Settings
+        async function loadSettingsBranchList() { const c = document.getElementById('settings-branch-list-container'); c.innerHTML = 'Loading...'; const res = await fetch(`${WEB_APP_URL}?action=getBranches`); const json = await res.json(); c.innerHTML = json.data.map(b => `<div class="flex justify-between p-2 border-b"><span>${b}</span><button class="delete-branch-button text-red-500" data-branch="${b}">ลบ</button></div>`).join(''); }
+        async function handleAddBranch() { const name = document.getElementById('new-branch-name').value; if(!name) return; await fetch(WEB_APP_URL, { method:'POST', body:JSON.stringify({action:'addBranch', branchName:name}) }); document.getElementById('new-branch-name').value = ''; loadSettingsBranchList(); loadBranchOptions(); }
+        async function handleBranchAction(action, name) { await fetch(WEB_APP_URL, { method:'POST', body:JSON.stringify({action, branchName:name}) }); loadSettingsBranchList(); loadBranchOptions(); }
+
+        // [NEW] ฟังก์ชันคำนวณเลขที่เอกสารอัตโนมัติ
+        async function updateAutoIssueNo() {
+            const branch = document.getElementById('branch').value;
+            const date = document.getElementById('date-issued').value;
+            const issueInput = document.getElementById('issue-no');
+            
+            // ถ้ายังไม่เลือกสาขา ไม่ต้องทำอะไร
+            if (!branch) return;
+
+            // แสดงสถานะกำลังโหลด
+            const originalValue = issueInput.value;
+            issueInput.value = "กำลังคำนวณ...";
+            issueInput.disabled = true; 
+
+            try {
+                const res = await fetch(`${WEB_APP_URL}?action=getNextIssueNo&branch=${encodeURIComponent(branch)}&date=${encodeURIComponent(date)}`);
+                const json = await res.json();
+                if (json.status === 'success') {
+                    issueInput.value = json.data;
+                } else {
+                    issueInput.value = originalValue; // คืนค่าเดิมถ้า error
+                }
+            } catch (e) {
+                console.error(e);
+                issueInput.value = originalValue;
+            } finally {
+                issueInput.disabled = false;
+            }
+        }
+
+    </script>
+</body>
+</html>
