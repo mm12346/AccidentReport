@@ -407,6 +407,12 @@
                         <input type="text" id="acc-location" name="accLocation" class="input-box-style flex-grow" required>
                     </div>
 
+                    <!-- NEW FIELD: Perpetrator -->
+                    <div class="flex items-center gap-4">
+                        <label for="acc-perpetrator" class="label-style w-24 flex-shrink-0">ผู้กระทำ</label>
+                        <input type="text" id="acc-perpetrator" name="accPerpetrator" class="input-box-style flex-grow" placeholder="ระบุชื่อผู้กระทำ (ถ้ามี)">
+                    </div>
+
                     <div class="flex items-center gap-4">
                         <label for="acc-activity" class="label-style w-32 flex-shrink-0">ขั้นตอน/กิจกรรม <span class="text-red-500">*</span></label>
                         <input type="text" id="acc-activity" name="accActivity" class="input-box-style flex-grow" required>
@@ -1728,6 +1734,11 @@
                             <div class="flex items-center gap-2">
                                 <span class="font-bold w-24 flex-shrink-0">สถานที่:</span>
                                 <div class="flex-grow">${box(r.accLocation, false, true)}</div>
+                            </div>
+                            <!-- NEW FIELD -->
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold w-24 flex-shrink-0">ผู้กระทำ:</span>
+                                <div class="flex-grow">${box(r.accPerpetrator, false, true)}</div>
                             </div>
                             <div class="flex items-center gap-2">
                                 <span class="font-bold w-32 flex-shrink-0">ขั้นตอน/กิจกรรม:</span>
