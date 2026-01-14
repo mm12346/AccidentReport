@@ -372,6 +372,7 @@
                             <option value="PC">PC</option>
                             <option value="ผู้รับเหมา">ผู้รับเหมา</option>
                             <option value="ลูกค้า">ลูกค้า</option>
+                            <option value="ทรัพย์สินเสียหาย">ทรัพย์สินเสียหาย</option>
                         </select>
                     </div>
                     <div class="flex items-center gap-2">
@@ -956,6 +957,8 @@
         document.getElementById('date-issued').addEventListener('change', updateAutoIssueNo);
 
         accidentCategorySelect.addEventListener('change', function() {
+            const affectedPersonSelect = document.getElementById('affected-person-type');
+
             if (this.value === 'อื่นๆ') {
                 accidentCategoryOtherInput.classList.remove('hidden');
                 accidentCategoryOtherInput.required = true;
@@ -965,6 +968,20 @@
                 accidentCategoryOtherInput.required = false;
                 accidentCategoryOtherInput.value = '';
             }
+
+            // Logic to auto-select "ทรัพย์สินเสียหาย" in Affected Person dropdown
+            if (this.value === 'ทรัพย์สินเสียหาย') {
+                affectedPersonSelect.value = 'ทรัพย์สินเสียหาย';
+            } else {
+                // If the user changes away from 'ทรัพย์สินเสียหาย', allowing them to choose freely.
+                // Optionally reset if it was auto-selected to 'ทรัพย์สินเสียหาย'
+                if (affectedPersonSelect.value === 'ทรัพย์สินเสียหาย') {
+                    affectedPersonSelect.value = ''; 
+                }
+            }
+
+            // NEW: Update required status of victim fields based on category
+            updateVictimRequirements();
         });
         
         accTypeSelect.addEventListener('change', function() {
@@ -1216,6 +1233,63 @@
             `;
             victimsContainer.appendChild(div);
             updateVictimNumbers();
+            
+            // Apply requirements immediately to this new row
+            updateVictimRequirements();
+        }
+
+        // --- NEW FUNCTION: Toggle Required Status based on Accident Category ---
+        function updateVictimRequirements() {
+            const category = document.getElementById('accident-category').value;
+            const isPropertyDamage = category === 'ทรัพย์สินเสียหาย';
+            
+            // Classes of inputs to toggle
+            const selectors = [
+                '.victim-name', 
+                '.victim-id', 
+                '.victim-age', 
+                '.victim-work-years', 
+                '.victim-dept', 
+                '.victim-injury-organ', 
+                '.victim-treatment', 
+                '.victim-days-lost',
+                '.victim-injury-select'
+            ];
+
+            const cards = document.querySelectorAll('.victim-card');
+            cards.forEach(card => {
+                selectors.forEach(selector => {
+                    const input = card.querySelector(selector);
+                    if (input) {
+                        const label = input.closest('div').querySelector('label');
+                        const asterisk = label ? label.querySelector('.text-red-500') : null;
+
+                        if (isPropertyDamage) {
+                            input.removeAttribute('required');
+                            if (asterisk) asterisk.style.display = 'none';
+                            input.classList.add('bg-gray-100'); // Visual cue: optional
+                        } else {
+                            input.setAttribute('required', 'true');
+                            if (asterisk) asterisk.style.display = 'inline';
+                            input.classList.remove('bg-gray-100');
+                        }
+                    }
+                });
+                
+                // Handle "Other" injury input specifically
+                const injurySelect = card.querySelector('.victim-injury-select');
+                const injuryOther = card.querySelector('.victim-injury-other');
+                if (injuryOther) {
+                    if (isPropertyDamage) {
+                        injuryOther.removeAttribute('required');
+                    } else {
+                        // Only require if select is 'อื่นๆ'
+                        if (injurySelect && injurySelect.value === 'อื่นๆ') {
+                            injuryOther.setAttribute('required', 'true');
+                        }
+                    }
+                }
+            });
         }
 
         function updateVictimNumbers() {
@@ -1440,6 +1514,7 @@
             }
 
             victims.forEach(v => addVictim(v));
+            updateVictimRequirements(); // Ensure correct state for edit mode
 
             if (data.imageUrl && !data.imageUrl.startsWith('Error')) {
                 imagePreview.src = data.imageUrl;
@@ -1973,6 +2048,8 @@
             
             victimsContainer.innerHTML = '';
             if(d.data.victims?.length) d.data.victims.forEach(addVictim); else addVictim();
+            
+            updateVictimRequirements(); // Ensure correct state based on loaded category
 
             currentDraftIdInput.value = id; 
             toggleSidebar(draftSidebar, false); 
