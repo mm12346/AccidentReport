@@ -1211,7 +1211,7 @@
                         <input type="text" class="input-box-style victim-injury-organ" placeholder="ระบุอวัยวะ" value="${data.victimInjuryOrgan || ''}" required>
                     </div>
                     <div class="sm:col-span-2">
-                        <label class="label-style">ลักษณะการบาดเจ็บ <span class="text-red-500">*</span></label>
+                        <label class="label-style">ลักษณะการบาดเจ็บ/ความเสียหาย <span class="text-red-500">*</span></label>
                         <div class="flex-grow flex flex-col sm:flex-row gap-2">
                             <select class="input-box-style flex-grow bg-white victim-injury-select" required>
                                 <option value="">-- เลือก --</option>
@@ -1832,7 +1832,7 @@
                                         ${box(v.victimInjuryOrgan)}
                                     </div>
                                     <div class="col-span-2">
-                                        <span class="font-bold block mb-1">ลักษณะการบาดเจ็บ:</span>
+                                        <span class="font-bold block mb-1">ลักษณะการบาดเจ็บ/ความเสียหาย:</span>
                                         ${box(v.victimInjuryType)}
                                     </div>
                                     <div class="col-span-2">
@@ -2412,3 +2412,4 @@
     </script>
 </body>
 </html>
+
