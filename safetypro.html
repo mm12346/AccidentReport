@@ -82,7 +82,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* --- STYLES FROM INDEX(5).HTML --- */
+        /* --- STYLES FOR FORM & PRINT (Copied/Adapted from index(5).html) --- */
         .input-box-style {
             background-color: #f0f0f0;
             border: 1px solid #d1d5db;
@@ -143,6 +143,86 @@
         }
         @-webkit-keyframes spin { 0% { -webkit-transform: rotate(0deg); } 100% { -webkit-transform: rotate(360deg); } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* --- PRINT SPECIFIC CSS --- */
+        @media print {
+            @page {
+                size: A4;
+                margin: 10mm 15mm;
+            }
+            html, body {
+                background: #fff !important;
+                font-size: 10pt !important;
+                width: 100% !important;
+                height: auto !important;
+                padding: 0 !important; 
+                margin: 0 !important;
+                overflow: visible !important;
+            }
+            /* Hide UI Elements */
+            #sidebar, header, #incident-list-view, #section-dashboard, #section-epermit, #section-inspection, #section-training, #section-risk, #section-settings, #form-actions-container, #mobile-overlay, #draft-sidebar, #message-area, .no-print {
+                display: none !important;
+            }
+            /* Modal overrides for print */
+            #report-details-modal {
+                display: block !important;
+                position: static !important;
+                inset: auto !important;
+                background: none !important;
+                width: 100% !important;
+                height: auto !important;
+                padding: 0 !important;
+                z-index: auto !important;
+            }
+            #report-details-modal > div {
+                box-shadow: none !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                border: none !important;
+            }
+            #report-details-content {
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+            }
+            #modal-header-actions {
+                display: none !important;
+            }
+            
+            /* Restore Form Styles for Print */
+            .input-box-style {
+                background-color: #ffffff !important;
+                border: 1px solid #d1d5db !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                padding: 2px 5px !important;
+                min-height: auto !important;
+                font-size: 10pt !important;
+            }
+            .print-no-border {
+                border: none !important;
+                background-color: transparent !important;
+            }
+            .print-bg-gray {
+                background-color: #f9fafb !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .print-page-break {
+                page-break-before: always !important;
+                display: block;
+                height: 1px;
+            }
+            .page-break-inside-avoid {
+                page-break-inside: avoid;
+            }
+            .section-header {
+                border-bottom: none !important;
+                margin-top: 10px !important;
+                margin-bottom: 5px !important;
+                font-size: 11pt !important;
+            }
+        }
     </style>
 </head>
 <body class="text-slate-800 antialiased overflow-hidden h-screen flex">
@@ -150,7 +230,7 @@
     <!-- Mobile Overlay -->
     <div id="mobile-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 z-40 hidden lg:hidden backdrop-blur-sm transition-opacity"></div>
 
-    <!-- Sidebar -->
+    <!-- Main Sidebar -->
     <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-white transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out flex flex-col shadow-2xl">
         <!-- Logo -->
         <div class="h-20 flex items-center px-6 border-b border-slate-800 bg-slate-950">
@@ -217,6 +297,19 @@
                     <i class="ph ph-sign-out text-xl"></i>
                 </button>
             </div>
+        </div>
+    </aside>
+
+    <!-- Draft Sidebar (Right) -->
+    <aside id="draft-sidebar" class="fixed inset-y-0 right-0 z-[60] w-80 bg-white shadow-2xl transform translate-x-full transition-transform duration-300 ease-in-out border-l border-slate-200 flex flex-col">
+        <div class="flex items-center justify-between p-4 border-b bg-slate-50">
+            <h2 class="text-lg font-bold text-slate-800 font-display">รายการฉบับร่าง</h2>
+            <button onclick="toggleDraftSidebar(false)" class="p-2 hover:bg-slate-200 rounded-full text-slate-500">
+                <i class="ph-bold ph-x"></i>
+            </button>
+        </div>
+        <div id="draft-list-container" class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/50">
+            <!-- Draft items injected here -->
         </div>
     </aside>
 
@@ -311,7 +404,7 @@
                                 <p class="text-slate-500 text-sm mt-1">จัดการข้อมูลอุบัติเหตุ Incident, Accident และ Near Miss</p>
                             </div>
                             <div class="flex gap-2">
-                                <button onclick="loadAllReportsList()" class="px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors">
+                                <button onclick="loadAllReportsList()" class="px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-50 text-slate-600 transition-colors" title="รีเฟรช">
                                     <i class="ph-bold ph-arrows-clockwise"></i>
                                 </button>
                                 <button onclick="toggleIncidentForm(true)" class="bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-red-500/30 text-sm font-medium flex items-center gap-2 transition-all transform active:scale-95">
@@ -348,14 +441,22 @@
                                 <span class="w-8 h-8 rounded-lg bg-red-100 text-red-600 flex items-center justify-center"><i class="ph-bold ph-file-text"></i></span>
                                 แบบฟอร์มรายงานอุบัติเหตุ
                             </h3>
-                            <button onclick="toggleIncidentForm(false)" class="text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                                <i class="ph-bold ph-x text-xl"></i>
-                            </button>
+                            <div class="flex items-center gap-2">
+                                <button type="button" onclick="saveDraft()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow transition-colors flex items-center gap-2">
+                                    <i class="ph-bold ph-floppy-disk"></i> บันทึกร่าง
+                                </button>
+                                <button type="button" onclick="toggleDraftSidebar(true)" class="px-4 py-2 bg-white border border-slate-300 text-slate-700 text-sm font-medium rounded-lg hover:bg-slate-50 transition-colors flex items-center gap-2">
+                                    <i class="ph-bold ph-list-dashes"></i> แบบร่าง
+                                </button>
+                                <button onclick="toggleIncidentForm(false)" class="text-slate-400 hover:text-slate-600 p-2 hover:bg-slate-100 rounded-lg transition-colors ml-2">
+                                    <i class="ph-bold ph-x text-xl"></i>
+                                </button>
+                            </div>
                         </div>
                         
                         <div class="p-6 md:p-10 max-w-5xl mx-auto">
-                            <!-- --- FORM CONTENT MATCHING INDEX(5).HTML --- -->
                             <form id="accident-form" class="space-y-8">
+                                <input type="hidden" id="current-draft-id" name="currentDraftId">
                                 <input type="hidden" id="edit-report-id" name="reportId">
                                 <input type="hidden" id="existing-image-url" name="existingImageUrl">
 
@@ -426,7 +527,6 @@
                                             <label class="label-style">สถานที่ <span class="text-red-500">*</span></label>
                                             <input type="text" id="acc-location" name="accLocation" class="input-box-style" required>
                                         </div>
-                                        <!-- Field "ผู้กระทำ" (accPerpetrator) -->
                                         <div class="md:col-span-2">
                                             <label class="label-style">ผู้กระทำ (ถ้ามี)</label>
                                             <input type="text" id="acc-perpetrator" name="accPerpetrator" class="input-box-style" placeholder="ระบุชื่อผู้กระทำ">
@@ -458,7 +558,6 @@
                                         </div>
                                     </div>
                                     
-                                    <!-- Image Upload -->
                                     <div class="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer relative mb-6" onclick="document.getElementById('acc-image').click()">
                                         <input type="file" id="acc-image" name="accImage" accept="image/*" class="hidden" onchange="handleImagePreview(event)">
                                         <div id="upload-placeholder">
@@ -468,7 +567,6 @@
                                         <img id="image-preview" src="" alt="Preview" class="hidden mx-auto max-h-64 rounded-lg shadow-sm object-contain mt-2">
                                     </div>
 
-                                    <!-- Prevention & Witness (Added from index(5)) -->
                                     <div class="mb-6">
                                         <label class="label-style">วิธีการป้องกันแก้ไขหลังเกิดอุบัติเหตุ <span class="text-red-500">*</span></label>
                                         <textarea id="acc-prevention" name="accPrevention" rows="3" class="input-box-style" required></textarea>
@@ -489,9 +587,7 @@
                                 <!-- SECTION 2: Victims -->
                                 <section>
                                     <h2 class="section-header"><i class="ph-duotone ph-first-aid text-red-500"></i> ส่วนที่ 2: ความเสียหาย</h2>
-                                    <div id="victims-container" class="space-y-4">
-                                        <!-- Dynamic Victim Cards -->
-                                    </div>
+                                    <div id="victims-container" class="space-y-4"></div>
                                     <button type="button" onclick="addVictim()" class="mt-3 text-sm text-blue-600 font-medium flex items-center hover:bg-blue-50 px-3 py-2 rounded-lg transition-colors">
                                         <i class="ph-bold ph-plus mr-2"></i> เพิ่มผู้ได้รับบาดเจ็บ
                                     </button>
@@ -539,8 +635,6 @@
                                             <label class="label-style">ความเห็นผู้ประสบเหตุ <span class="text-red-500">*</span></label>
                                             <input type="text" id="opinion-victim" name="opinionVictim" class="input-box-style" required>
                                         </div>
-                                        
-                                        <!-- Added SM/DM/GM Fields -->
                                         <div>
                                             <label class="label-style">ความเห็นของ SM</label>
                                             <input type="text" id="opinion-sm" name="opinionSM" class="input-box-style">
@@ -553,7 +647,6 @@
                                             <label class="label-style">ความเห็นของ GM</label>
                                             <input type="text" id="opinion-gm" name="opinionGM" class="input-box-style">
                                         </div>
-
                                         <div>
                                             <label class="label-style">ความเห็น จป./Loss Prevention <span class="text-red-500">*</span></label>
                                             <input type="text" id="opinion-safety" name="opinionSafety" class="input-box-style" required>
@@ -575,7 +668,7 @@
                                 </section>
 
                                 <!-- Actions -->
-                                <div class="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100 sticky bottom-0 bg-white py-4 shadow-top z-10">
+                                <div id="form-actions-container" class="flex justify-end gap-3 pt-6 mt-6 border-t border-slate-100 sticky bottom-0 bg-white py-4 shadow-top z-10">
                                     <button type="button" onclick="toggleIncidentForm(false)" class="px-6 py-2.5 rounded-xl border border-slate-300 text-slate-600 font-medium hover:bg-slate-50">ยกเลิก</button>
                                     <button type="submit" id="submit-button" class="px-6 py-2.5 rounded-xl bg-red-600 text-white font-medium hover:bg-red-700 shadow-lg shadow-red-500/30 flex items-center">
                                         <span id="button-text">ส่งรายงาน</span>
@@ -588,7 +681,7 @@
                 </div>
             </div>
 
-            <!-- E-Permit View (Placeholder) -->
+            <!-- E-Permit View -->
             <div id="section-epermit" class="content-section hidden animate-fade-in">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[500px] flex flex-col justify-center items-center text-slate-400">
                     <i class="ph-duotone ph-file-lock text-6xl mb-4"></i>
@@ -596,7 +689,7 @@
                 </div>
             </div>
 
-            <!-- Inspection View (Placeholder) -->
+            <!-- Inspection View -->
             <div id="section-inspection" class="content-section hidden animate-fade-in">
                 <div class="bg-white rounded-2xl shadow-sm border border-slate-100 min-h-[500px] flex flex-col justify-center items-center text-slate-400">
                     <i class="ph-duotone ph-clipboard-text text-6xl mb-4"></i>
@@ -615,21 +708,52 @@
         </main>
     </div>
 
+    <!-- Print/Details Modal (Hidden) -->
+    <div id="report-details-modal" class="fixed inset-0 bg-black bg-opacity-75 z-[60] p-0 sm:p-4 hidden flex items-center justify-center">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-full sm:max-h-[90vh] flex flex-col relative">
+            <div id="modal-header-actions" class="flex justify-between items-center p-4 border-b bg-white rounded-t-lg sticky top-0 z-10">
+                <h2 class="text-lg font-bold text-slate-800">ตัวอย่างก่อนพิมพ์</h2>
+                <div class="flex gap-2">
+                    <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+                        <i class="ph-bold ph-printer"></i> พิมพ์เอกสาร
+                    </button>
+                    <button onclick="closeReportDetailsModal()" class="p-2 hover:bg-slate-100 rounded-full text-slate-600">
+                        <i class="ph-bold ph-x"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="report-details-content" class="p-8 overflow-y-auto bg-white">
+                <!-- Content generated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Draft Saved Modal -->
+    <div id="draft-modal" class="fixed inset-0 bg-black bg-opacity-60 z-[70] hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 text-center transform transition-all scale-100">
+            <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-blue-100 mb-4">
+                <i class="ph-fill ph-floppy-disk text-2xl text-blue-600"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900 mb-2">บันทึกร่างสำเร็จ</h3>
+            <p class="text-gray-500 mb-6 text-sm">คุณสามารถกลับมาแก้ไขข้อมูลนี้ได้ในภายหลัง</p>
+            <button onclick="document.getElementById('draft-modal').classList.add('hidden')" class="w-full px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg">ตกลง</button>
+        </div>
+    </div>
+
     <!-- MAIN SCRIPT -->
     <script>
-        // --- CONFIGURATION FROM INDEX(5) ---
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzReAzWNfLP2cirmVnWL6Vq8evpWDfmlZf3HAzC3VOtvhLE6p1wIk_LB1lHOknNLSst/exec";
         const CLOUDINARY_CLOUD_NAME = "dsmiqo5si"; 
         const CLOUDINARY_UPLOAD_PRESET = "Accident";
+        const DRAFT_KEY = 'accidentFormDrafts';
+        
         let allReportsData = [];
         let injuryOptions = [];
-        
-        // Chart Instances
         let branchChartInstance = null;
         let monthChartInstance = null;
         let categoryChartInstance = null;
 
-        // --- NAVIGATION & UI ---
+        // --- NAVIGATION ---
         function switchTab(tabId) {
             document.querySelectorAll('.content-section').forEach(el => el.classList.add('hidden'));
             document.getElementById('section-' + tabId).classList.remove('hidden');
@@ -670,6 +794,307 @@
             }
         }
 
+        // --- DRAFT SYSTEM ---
+        function toggleDraftSidebar(show) {
+            const sb = document.getElementById('draft-sidebar');
+            if (show) {
+                renderDraftList();
+                sb.classList.remove('translate-x-full');
+            } else {
+                sb.classList.add('translate-x-full');
+            }
+        }
+
+        function getAllDrafts() { return JSON.parse(localStorage.getItem(DRAFT_KEY) || '[]'); }
+        
+        function saveDraft() {
+            if(!document.getElementById('branch').value) return showMessage('กรุณาเลือกสาขาก่อนบันทึก', 'error');
+            const data = getFormDataObject();
+            const drafts = getAllDrafts();
+            const id = document.getElementById('current-draft-id').value || Date.now().toString();
+            const name = `${data.branch} - ${data.accDate || 'ไม่มีวันที่'}`;
+            
+            const idx = drafts.findIndex(d => d.id === id);
+            if(idx > -1) drafts[idx] = {id, name, data};
+            else drafts.push({id, name, data});
+            
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
+            document.getElementById('current-draft-id').value = id;
+            document.getElementById('draft-modal').classList.remove('hidden');
+            renderDraftList();
+        }
+
+        function renderDraftList() {
+            const container = document.getElementById('draft-list-container');
+            const drafts = getAllDrafts().sort((a,b) => b.id - a.id);
+            if (drafts.length === 0) {
+                container.innerHTML = '<p class="text-center text-slate-400 text-sm mt-4">ไม่มีฉบับร่าง</p>';
+                return;
+            }
+            container.innerHTML = drafts.map(d => `
+                <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm flex justify-between items-center">
+                    <div>
+                        <p class="text-sm font-bold text-slate-700 truncate w-32">${d.name}</p>
+                        <p class="text-xs text-slate-400">ID: ${d.id.substr(-4)}</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="loadDraft('${d.id}')" class="p-1.5 bg-blue-50 text-blue-600 rounded hover:bg-blue-100 text-xs">โหลด</button>
+                        <button onclick="deleteDraft('${d.id}')" class="p-1.5 bg-red-50 text-red-600 rounded hover:bg-red-100 text-xs">ลบ</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function loadDraft(id) {
+            const draft = getAllDrafts().find(d => d.id === id);
+            if (!draft) return;
+            
+            document.getElementById('accident-form').reset();
+            document.getElementById('investigators-container').innerHTML = '';
+            document.getElementById('victims-container').innerHTML = '';
+            
+            // Populate logic simplified for brevity (reusing structure logic)
+            // Ideally call a shared populate function, but for now manual:
+            const data = draft.data;
+            Object.keys(data).forEach(k => {
+                if(k !== 'investigators' && k !== 'victims') {
+                    const el = document.querySelector(`[name="${k}"]`);
+                    if(el) el.value = data[k];
+                }
+            });
+            
+            // Handle Victims & Investigators
+            if(data.victims && data.victims.length) data.victims.forEach(addVictim); else addVictim();
+            if(data.investigators && data.investigators.length) data.investigators.forEach(addInvestigator); else addInvestigator();
+            
+            // Handle "Other" toggles
+            document.getElementById('accident-category').dispatchEvent(new Event('change'));
+            document.getElementById('acc-type').dispatchEvent(new Event('change'));
+
+            document.getElementById('current-draft-id').value = id;
+            toggleDraftSidebar(false);
+            showMessage('โหลดแบบร่างเรียบร้อย', 'success');
+        }
+
+        function deleteDraft(id) {
+            const drafts = getAllDrafts().filter(d => d.id !== id);
+            localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts));
+            renderDraftList();
+        }
+
+        // --- PRINT SYSTEM ---
+        async function openPrintModal(id) {
+            const modal = document.getElementById('report-details-modal');
+            const content = document.getElementById('report-details-content');
+            modal.classList.remove('hidden');
+            content.innerHTML = '<div class="flex justify-center p-10"><div class="loader h-10 w-10 rounded-full border-2 border-t-blue-600"></div></div>';
+            
+            try {
+                // Check if local data has full details first to save API call
+                const report = allReportsData.find(r => r.ReportID == id);
+                let fullData = null;
+                
+                // If we need detailed nested data not in list view, fetch it
+                const res = await fetch(`${WEB_APP_URL}?action=getReportDetails&id=${encodeURIComponent(id)}`);
+                const json = await res.json();
+                if(json.status === 'success') {
+                    fullData = json.data;
+                    content.innerHTML = generateReportHTML(fullData);
+                } else {
+                    content.innerHTML = '<p class="text-center text-red-500">โหลดข้อมูลไม่สำเร็จ</p>';
+                }
+            } catch(e) {
+                content.innerHTML = '<p class="text-center text-red-500">เกิดข้อผิดพลาดในการเชื่อมต่อ</p>';
+            }
+        }
+
+        function closeReportDetailsModal() {
+            document.getElementById('report-details-modal').classList.add('hidden');
+        }
+
+        function generateReportHTML(data) {
+            const r = data.report;
+            let inv = data.investigators || [];
+            if(typeof inv === 'string') try { inv = JSON.parse(inv); } catch(e){ inv = []; }
+            let victims = data.victims || [];
+            if(typeof victims === 'string') try { victims = JSON.parse(victims); } catch(e){ victims = []; }
+            if(!victims.length && r.victimName) victims = [r]; // Legacy fallback
+
+            const box = (val, center = false, noBorder = false) => `
+                <div class="input-box-style ${center ? 'text-center justify-center' : ''} ${noBorder ? 'print-no-border' : ''} flex items-start bg-[#f0f0f0] break-words break-all px-2 py-0.5 h-auto !min-h-0">
+                    ${val || '-'}
+                </div>`;
+            const textBox = (val, noBorder = false) => `
+                <div class="input-box-style ${noBorder ? 'print-no-border' : ''} bg-[#f0f0f0] p-2 min-h-[8rem] whitespace-pre-wrap break-words break-all">
+                    ${val || '-'}
+                </div>`;
+            const dateFmt = (d) => d ? d.split(' ')[0] : '-';
+            const formatTime = (t) => t ? (t.match(/\d{2}:\d{2}/) || [t])[0] : '-';
+
+            // HTML Structure copied exactly from index(5).html for printing
+            return `
+                <div class="max-w-4xl mx-auto font-sarabun text-black">
+                    <div class="mb-2 pb-0 relative">
+                         <div class="flex flex-col items-center relative">
+                            <div class="w-full flex justify-center sm:justify-start mb-1 sm:absolute sm:top-0 sm:left-0 sm:w-auto sm:mb-0">
+                                <img src="https://raw.githubusercontent.com/mm12346/AccidentReport/refs/heads/main/global.png" class="h-16 w-auto object-contain">
+                            </div>
+                            <div class="text-center sm:pt-2 w-full">
+                                <h1 class="text-2xl font-bold mb-0 text-gray-900">Accident Report</h1>
+                                <p class="text-base text-gray-700 leading-tight">แบบฟอร์มรายงานการสอบสวนอุบัติเหตุ</p>
+                                <p class="text-base text-gray-700 leading-tight">บริษัท สยามโกลบอลเฮ้าส์ จำกัด (มหาชน)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 text-sm border-b pb-2">
+                        <div class="flex flex-wrap justify-center gap-4 mb-1">
+                             <div class="flex items-center gap-2">
+                                <span class="font-bold whitespace-nowrap">สาขา:</span>
+                                <div class="w-40">${box(r.branch, false, true)}</div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold whitespace-nowrap">ครั้งที่:</span>
+                                <div class="w-24">${box(r.issueNo, true, true)}</div>
+                            </div>
+                        </div>
+                        <div class="flex justify-center items-center mb-1">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold whitespace-nowrap">วันที่จัดทำ:</span>
+                                <div class="w-32">${box(dateFmt(r.dateIssued), true, true)}</div>
+                            </div>
+                        </div>
+                        <div class="flex flex-wrap justify-center gap-4">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold whitespace-nowrap">ประเภทอุบัติเหตุ:</span>
+                                <div class="w-40">${box(r.accidentCategory, false, true)}</div>
+                            </div>
+                             <div class="flex items-center gap-2">
+                                <span class="font-bold whitespace-nowrap">ผู้ได้รับผลกระทบ:</span>
+                                <div class="w-40">${box(r.affectedPersonType, false, true)}</div>
+                            </div>
+                             <div class="flex items-center gap-2">
+                                <span class="font-bold whitespace-nowrap">ช่วงเวลา:</span>
+                                <div class="w-40">${box(r.workShift, false, true)}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h2 class="section-header">ส่วนที่ 1: ข้อมูลการเกิดอุบัติเหตุ</h2>
+                        <div class="space-y-2 text-sm">
+                            <div class="grid grid-cols-2 gap-4">
+                                 <div class="flex items-center gap-2"><span class="font-bold w-24 flex-shrink-0">วันที่เกิดเหตุ:</span><div class="flex-grow">${box(dateFmt(r.accDate), false, true)}</div></div>
+                                 <div class="flex items-center gap-2"><span class="font-bold w-16 flex-shrink-0 text-right">เวลา:</span><div class="w-32">${box(formatTime(r.accTime), true, true)}</div></div>
+                            </div>
+                            <div class="flex items-center gap-2"><span class="font-bold w-24 flex-shrink-0">สถานที่:</span><div class="flex-grow">${box(r.accLocation, false, true)}</div></div>
+                            <div class="flex items-center gap-2"><span class="font-bold w-24 flex-shrink-0">ผู้กระทำ:</span><div class="flex-grow">${box(r.accPerpetrator, false, true)}</div></div>
+                            <div class="flex items-center gap-2"><span class="font-bold w-32 flex-shrink-0">ขั้นตอน/กิจกรรม:</span><div class="flex-grow">${box(r.accActivity, false, true)}</div></div>
+                            <div class="flex items-center gap-2"><span class="font-bold w-32 flex-shrink-0">เครื่องมือ/เครื่องจักร:</span><div class="flex-grow">${box(r.accMachine, false, true)}</div></div>
+                            <div class="flex items-center gap-2"><span class="font-bold w-32 flex-shrink-0">PPE ที่สวมใส่:</span><div class="flex-grow">${box(r.accPPE, false, true)}</div></div>
+                             <div class="flex items-center gap-2"><span class="font-bold w-32 flex-shrink-0">ลักษณะอุบัติเหตุ:</span><div class="flex-grow">${box(r.accType, false, true)}</div></div>
+                            <div class="mt-2"><p class="font-bold mb-1">รายละเอียด (ใคร, ทำอะไร, ที่ไหน, เมื่อไหร่, อย่างไร):</p>${textBox(r.accDetails, true)}</div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6 page-break-inside-avoid">
+                        <h2 class="section-header">รูปเหตุการณ์</h2>
+                        <div class="border border-gray-300 h-[250px] flex flex-col items-center justify-center bg-gray-50 rounded overflow-hidden relative">
+                            ${r.imageUrl && !r.imageUrl.startsWith('Error') ? `<img src="${r.imageUrl}" class="h-full w-full object-contain">` : `<span class="text-gray-400 italic">ไม่มีรูปภาพ</span>`}
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                         <div class="mb-4"><h2 class="section-header">วิธีการป้องกันแก้ไขหลังเกิดอุบัติเหตุ</h2>${box(r.accPrevention, false, true)}</div>
+                         <div><h2 class="section-header">พยานผู้พบเห็นเหตุการณ์</h2>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div class="flex items-center gap-2"><span class="font-bold">ชื่อ-สกุล พยาน:</span><div class="flex-grow">${box(r.accWitness, false, true)}</div></div>
+                                <div class="flex items-center gap-2"><span class="font-bold">แผนก:</span><div class="flex-grow">${box(r.accWitnessDept, false, true)}</div></div>
+                            </div>
+                         </div>
+                    </div>
+                    
+                    <div class="print-page-break"></div>
+
+                    <div class="mb-6">
+                        <h2 class="section-header">ส่วนที่ 2: ความเสียหาย (${victims.length} ราย)</h2>
+                        ${victims.map((v, idx) => `
+                            <div class="mb-4 ${idx > 0 ? 'border-t border-gray-300 pt-4' : ''}">
+                                ${victims.length > 1 ? `<div class="font-bold text-gray-700 mb-2">ลำดับที่ ${idx+1}</div>` : ''}
+                                <div class="grid grid-cols-3 gap-4 mb-2 text-sm">
+                                    <div class="col-span-2"><span class="font-bold block mb-1">ผู้ได้รับบาดเจ็บ:</span>${box(v.victimName)}</div>
+                                    <div><span class="font-bold block mb-1">รหัสพนักงาน:</span>${box(v.victimId)}</div>
+                                    <div><span class="font-bold block mb-1">อายุ:</span>${box(v.victimAge)}</div>
+                                    <div><span class="font-bold block mb-1">อายุงาน (ปี):</span>${box(v.victimWorkYears)}</div>
+                                    <div><span class="font-bold block mb-1">แผนก/สังกัด:</span>${box(v.victimDept)}</div>
+                                    <div class="col-span-1"><span class="font-bold block mb-1">อวัยวะที่บาดเจ็บ:</span>${box(v.victimInjuryOrgan)}</div>
+                                    <div class="col-span-2"><span class="font-bold block mb-1">ลักษณะการบาดเจ็บ:</span>${box(v.victimInjuryType)}</div>
+                                    <div class="col-span-2"><span class="font-bold block mb-1">การรักษา:</span>${box(v.victimTreatment)}</div>
+                                    <div><span class="font-bold block mb-1">หยุดงาน (วัน):</span>${box(v.victimDaysLost)}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                        <div class="grid grid-cols-3 gap-4 text-sm border-t border-gray-900 pt-4 mt-4">
+                            <div><span class="font-bold block mb-1">มูลค่าความเสียหาย (บาท):</span>${box(r.damageCost)}</div>
+                            <div class="col-span-2"><span class="font-bold block mb-1">รายละเอียดความเสียหายอื่นๆ:</span>${box(r.damageDetails)}</div>
+                         </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h2 class="section-header">ส่วนที่ 3: การวิเคราะห์สาเหตุ</h2>
+                        <div class="grid grid-cols-2 gap-4 mb-4 text-sm">
+                            <div><span class="font-bold block mb-1">การกระทำที่ไม่ปลอดภัย (Unsafe Act):</span>${textBox(r.causeUnsafeAct)}</div>
+                            <div><span class="font-bold block mb-1">สภาพการณ์ที่ไม่ปลอดภัย (Unsafe Condition):</span>${textBox(r.causeUnsafeCondition)}</div>
+                        </div>
+                         <div class="text-sm"><span class="font-bold block mb-1">แนวทางแก้ไข/ป้องกันการเกิดซ้ำ:</span>${box(r.causeCorrection, false, true)}</div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h2 class="section-header">ส่วนที่ 4: ความคิดเห็นเพิ่มเติม</h2>
+                        <div class="space-y-2 text-sm">
+                             <div class="flex items-center gap-2"><span class="font-bold w-48 flex-shrink-0">ข้อเสนอแนะเพื่อการป้องกัน:</span> <div class="flex-grow">${box(r.opinionPrevention, false, true)}</div></div>
+                             <div class="flex items-center gap-2"><span class="font-bold w-48 flex-shrink-0">ความเห็นผู้ประสบเหตุ:</span> <div class="flex-grow">${box(r.opinionVictim, false, true)}</div></div>
+                             <div class="flex items-center gap-2"><span class="font-bold w-48 flex-shrink-0">ความเห็นของ SM:</span> <div class="flex-grow">${box(r.opinionSM, false, true)}</div></div>
+                             <div class="flex items-center gap-2"><span class="font-bold w-48 flex-shrink-0">ความเห็นของ DM:</span> <div class="flex-grow">${box(r.opinionDM, false, true)}</div></div>
+                             <div class="flex items-center gap-2"><span class="font-bold w-48 flex-shrink-0">ความเห็นของ GM:</span> <div class="flex-grow">${box(r.opinionGM, false, true)}</div></div>
+                             <div class="flex items-center gap-2"><span class="font-bold w-48 flex-shrink-0">ความเห็น จป./Loss Prevention:</span> <div class="flex-grow">${box(r.opinionSafety, false, true)}</div></div>
+                             <div class="flex items-center gap-2"><span class="font-bold w-48 flex-shrink-0">บทลงโทษ (ถ้ามี):</span> <div class="flex-grow">${box(r.penalty, false, true)}</div></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2 page-break-inside-avoid">
+                        <h2 class="section-header">ผู้เข้าร่วมการสอบสวน</h2>
+                        <div class="mt-2">
+                            <table class="w-full text-sm border-collapse bg-gray-50 print-bg-gray">
+                                <thead>
+                                    <tr class="bg-gray-200 border-b border-gray-300">
+                                        <th class="p-2 text-left w-10">#</th>
+                                        <th class="p-2 text-left">ชื่อ-สกุล</th>
+                                        <th class="p-2 text-left">แผนก</th>
+                                        <th class="p-2 text-left">ตำแหน่ง</th>
+                                        <th class="p-2 text-right w-40">ลายเซ็น</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${Array.isArray(inv) && inv.length > 0 ? 
+                                        inv.map((i, idx) => `
+                                            <tr class="border-b border-gray-200">
+                                                <td class="p-2 text-center">${idx+1}</td>
+                                                <td class="p-2 font-medium">${i.invName || i.InvName || '-'}</td>
+                                                <td class="p-2">${i.invDept || '-'}</td>
+                                                <td class="p-2">${i.invPosition || i.InvPosition || '-'}</td>
+                                                <td class="p-2 text-right italic text-gray-400">...................................</td>
+                                            </tr>
+                                        `).join('') : '<tr><td colspan="5" class="p-4 text-center italic text-gray-400">ไม่มีรายชื่อผู้เข้าร่วม</td></tr>'}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- FORM HELPERS ---
         function toggleIncidentForm(show) {
             const list = document.getElementById('incident-list-view');
             const form = document.getElementById('incident-form-view');
@@ -682,7 +1107,8 @@
                 form.classList.add('hidden');
                 list.classList.remove('hidden');
                 document.getElementById('accident-form').reset();
-                addVictim({}); // Reset victim
+                document.getElementById('current-draft-id').value = '';
+                addVictim({});
             }
         }
 
@@ -694,8 +1120,37 @@
             setTimeout(() => el.classList.add('hidden'), 5000);
         }
 
-        // --- FORM LOGIC (Merged from index(5)) ---
-        
+        function getFormDataObject() {
+            const formData = new FormData(document.getElementById('accident-form'));
+            const obj = { investigators: [], victims: [] };
+            formData.forEach((v, k) => { if (!k.startsWith('inv') && k !== 'accImage') obj[k] = v; });
+            // Investigators
+            document.querySelectorAll('#investigators-container > div').forEach(row => {
+                const inputs = row.querySelectorAll('input');
+                if(inputs[0].value) obj.investigators.push({ invName: inputs[0].value, invPosition: inputs[1].value });
+            });
+            // Victims
+            document.querySelectorAll('.victim-card').forEach(card => {
+                let injuryType = card.querySelector('.victim-injury-select').value;
+                if (injuryType === 'อื่นๆ') injuryType = card.querySelector('.victim-injury-other').value.trim();
+                
+                obj.victims.push({
+                    victimName: card.querySelector('.victim-name').value,
+                    victimId: card.querySelector('.victim-id').value,
+                    victimAge: card.querySelector('.victim-age').value,
+                    victimWorkYears: card.querySelector('.victim-work-years').value,
+                    victimDept: card.querySelector('.victim-dept').value,
+                    victimInjuryOrgan: card.querySelector('.victim-injury-organ').value,
+                    victimInjuryType: injuryType,
+                    victimTreatment: card.querySelector('.victim-treatment').value,
+                    victimDaysLost: card.querySelector('.victim-days-lost').value
+                });
+            });
+            if (obj.accidentCategory === 'อื่นๆ') obj.accidentCategory = document.getElementById('accident-category-other').value;
+            if (obj.accType === 'อื่นๆ') obj.accType = document.getElementById('acc-type-other').value;
+            return obj;
+        }
+
         async function loadBranchOptions() { 
             try { 
                 const res = await fetch(`${WEB_APP_URL}?action=getBranches`); 
@@ -737,14 +1192,11 @@
             } catch (e) { issueInput.value = "Error"; }
         }
 
-        // --- DYNAMIC FIELDS ---
-        
         function addVictim(data = {}) {
             const container = document.getElementById('victims-container');
             const div = document.createElement('div');
             div.className = 'victim-card';
             const count = container.children.length + 1;
-            
             const injurySelectOptions = injuryOptions.map(opt => `<option value="${opt}" ${data.victimInjuryType === opt ? 'selected' : ''}>${opt}</option>`).join('');
             
             div.innerHTML = `
@@ -753,41 +1205,17 @@
                     ${count > 1 ? '<button type="button" onclick="this.closest(\'.victim-card\').remove()" class="text-red-500 text-sm hover:underline">ลบ</button>' : ''}
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    <div class="sm:col-span-2">
-                        <label class="label-style">ชื่อ-สกุล <span class="text-red-500">*</span></label>
-                        <input type="text" class="input-box-style victim-name" value="${data.victimName || ''}" required>
+                    <div class="sm:col-span-2"><label class="label-style">ชื่อ-สกุล</label><input type="text" class="input-box-style victim-name" value="${data.victimName || ''}" required></div>
+                    <div><label class="label-style">รหัสพนักงาน</label><input type="text" class="input-box-style victim-id" value="${data.victimId || ''}" required></div>
+                    <div><label class="label-style">อายุ</label><input type="number" class="input-box-style victim-age" value="${data.victimAge || ''}" required></div>
+                    <div><label class="label-style">อายุงาน (ปี)</label><input type="number" step="0.1" class="input-box-style victim-work-years" value="${data.victimWorkYears || ''}" required></div>
+                    <div><label class="label-style">แผนก/สังกัด</label><input type="text" class="input-box-style victim-dept" value="${data.victimDept || ''}" required></div>
+                    <div class="sm:col-span-1"><label class="label-style">อวัยวะที่บาดเจ็บ</label><input type="text" class="input-box-style victim-injury-organ" value="${data.victimInjuryOrgan || ''}" required></div>
+                    <div class="sm:col-span-2"><label class="label-style">ลักษณะการบาดเจ็บ</label>
+                        <select class="input-box-style victim-injury-select" required><option value="">-- เลือก --</option>${injurySelectOptions}<option value="อื่นๆ">อื่นๆ</option></select>
+                        <input type="text" class="input-box-style victim-injury-other hidden mt-2" placeholder="ระบุ" value="${data.victimInjuryType && !injuryOptions.includes(data.victimInjuryType) ? data.victimInjuryType : ''}">
                     </div>
-                    <div>
-                        <label class="label-style">รหัสพนักงาน <span class="text-red-500">*</span></label>
-                        <input type="text" class="input-box-style victim-id" value="${data.victimId || ''}" required>
-                    </div>
-                    <div>
-                        <label class="label-style">อายุ <span class="text-red-500">*</span></label>
-                        <input type="number" class="input-box-style victim-age" value="${data.victimAge || ''}" required>
-                    </div>
-                    <div>
-                        <label class="label-style">อายุงาน (ปี) <span class="text-red-500">*</span></label>
-                        <input type="number" step="0.1" class="input-box-style victim-work-years" value="${data.victimWorkYears || ''}" required>
-                    </div>
-                    <div>
-                        <label class="label-style">แผนก/สังกัด <span class="text-red-500">*</span></label>
-                        <input type="text" class="input-box-style victim-dept" value="${data.victimDept || ''}" required>
-                    </div>
-                    <div class="sm:col-span-1">
-                        <label class="label-style">อวัยวะที่บาดเจ็บ <span class="text-red-500">*</span></label>
-                        <input type="text" class="input-box-style victim-injury-organ" placeholder="ระบุอวัยวะ" value="${data.victimInjuryOrgan || ''}" required>
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="label-style">ลักษณะการบาดเจ็บ <span class="text-red-500">*</span></label>
-                        <select class="input-box-style victim-injury-select" required>
-                            <option value="">-- เลือก --</option>
-                            ${injurySelectOptions}
-                            <option value="อื่นๆ">อื่นๆ</option>
-                        </select>
-                        <input type="text" class="input-box-style victim-injury-other hidden mt-2" placeholder="ระบุลักษณะการบาดเจ็บ">
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="label-style">การรักษา <span class="text-red-500">*</span></label>
+                    <div class="sm:col-span-2"><label class="label-style">การรักษา</label>
                         <select class="input-box-style victim-treatment" required>
                             <option value="">-- เลือก --</option>
                             <option value="ปฐมพยาบาลเบื้องต้น" ${data.victimTreatment === 'ปฐมพยาบาลเบื้องต้น' ? 'selected' : ''}>ปฐมพยาบาลเบื้องต้น</option>
@@ -796,14 +1224,10 @@
                             <option value="ส่ง รพ.รักษาตัว" ${data.victimTreatment === 'ส่ง รพ.รักษาตัว' ? 'selected' : ''}>ส่ง รพ.รักษาตัว</option>
                         </select>
                     </div>
-                    <div>
-                        <label class="label-style">หยุดงาน (วัน) <span class="text-red-500">*</span></label>
-                        <input type="number" class="input-box-style victim-days-lost" value="${data.victimDaysLost || ''}" required>
-                    </div>
-                </div>
-            `;
+                    <div><label class="label-style">หยุดงาน (วัน)</label><input type="number" class="input-box-style victim-days-lost" value="${data.victimDaysLost || ''}" required></div>
+                </div>`;
             container.appendChild(div);
-            updateVictimRequirements(); // Check required logic
+            updateVictimRequirements();
         }
 
         function addInvestigator(data = {}) {
@@ -811,11 +1235,10 @@
             const div = document.createElement('div');
             div.className = 'grid grid-cols-1 sm:grid-cols-3 gap-2 items-end p-2 bg-slate-50 rounded-lg border border-slate-100';
             div.innerHTML = `
-                <div><label class="text-xs font-medium text-slate-500">ชื่อ-สกุล</label><input type="text" class="input-box-style" value="${data.invName||''}" required></div>
-                <div><label class="text-xs font-medium text-slate-500">ตำแหน่ง</label><input type="text" class="input-box-style" value="${data.invPosition||''}" required></div>
-                <div class="relative"><label class="text-xs font-medium text-slate-500">ลายเซ็น</label><input type="text" class="input-box-style bg-gray-100 text-gray-400" disabled value="ลงชื่อในเอกสารจริง">
-                ${container.children.length > 0 ? '<button type="button" onclick="this.closest(\'div\').parentElement.remove()" class="absolute right-0 bottom-0 p-2 text-red-500 hover:text-red-700">×</button>' : ''}</div>
-            `;
+                <div><input type="text" class="input-box-style" placeholder="ชื่อ-สกุล" value="${data.invName||''}" required></div>
+                <div><input type="text" class="input-box-style" placeholder="ตำแหน่ง" value="${data.invPosition||''}" required></div>
+                <div class="relative"><input type="text" class="input-box-style bg-gray-100 text-gray-400" disabled value="ลงชื่อในเอกสารจริง">
+                ${container.children.length > 0 ? '<button type="button" onclick="this.closest(\'div\').parentElement.remove()" class="absolute right-0 bottom-0 p-2 text-red-500 hover:text-red-700">×</button>' : ''}</div>`;
             container.appendChild(div);
         }
 
@@ -834,39 +1257,20 @@
             }
         }
 
-        // --- LOGIC: UPDATE VICTIM REQUIREMENTS ---
         function updateVictimRequirements() {
             const category = document.getElementById('accident-category').value;
             const isPropertyDamage = category === 'ทรัพย์สินเสียหาย';
-            
-            const selectors = [
-                '.victim-name', '.victim-id', '.victim-age', 
-                '.victim-work-years', '.victim-dept', '.victim-injury-organ', 
-                '.victim-treatment', '.victim-days-lost', '.victim-injury-select'
-            ];
-
+            const selectors = ['.victim-name', '.victim-id', '.victim-age', '.victim-work-years', '.victim-dept', '.victim-injury-organ', '.victim-treatment', '.victim-days-lost', '.victim-injury-select'];
             document.querySelectorAll('.victim-card').forEach(card => {
                 selectors.forEach(sel => {
                     const input = card.querySelector(sel);
                     if (input) {
-                        const label = input.closest('div').querySelector('label');
-                        const asterisk = label ? label.querySelector('.text-red-500') : null;
-                        
-                        if (isPropertyDamage) {
-                            input.removeAttribute('required');
-                            input.classList.add('bg-gray-100');
-                            if(asterisk) asterisk.style.display = 'none';
-                        } else {
-                            input.setAttribute('required', 'true');
-                            input.classList.remove('bg-gray-100');
-                            if(asterisk) asterisk.style.display = 'inline';
-                        }
+                        if (isPropertyDamage) { input.removeAttribute('required'); input.classList.add('bg-gray-100'); }
+                        else { input.setAttribute('required', 'true'); input.classList.remove('bg-gray-100'); }
                     }
                 });
             });
         }
-
-        // --- SUBMIT HANDLING ---
 
         document.getElementById('accident-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -879,7 +1283,6 @@
             btnLoader.classList.remove('hidden');
 
             try {
-                // 1. Image Upload
                 let imageUrl = document.getElementById('existing-image-url').value;
                 const fileInput = document.getElementById('acc-image');
                 if (fileInput.files[0]) {
@@ -891,48 +1294,16 @@
                     if(json.secure_url) imageUrl = json.secure_url;
                 }
 
-                // 2. Collect Data
-                const formData = new FormData(e.target);
-                const obj = { 
-                    action: 'saveReport', 
-                    imageUrl: imageUrl,
-                    investigators: [], 
-                    victims: [] 
-                };
-                formData.forEach((v, k) => { if(!k.startsWith('inv') && k!=='accImage') obj[k] = v; });
+                const dataObject = getFormDataObject();
+                dataObject.action = document.getElementById('edit-report-id').value ? 'updateReport' : 'saveReport';
+                if(dataObject.action === 'updateReport') dataObject.reportId = document.getElementById('edit-report-id').value;
+                dataObject.imageUrl = imageUrl;
+                
+                // If saved from draft, include draft id to delete it later if needed (optional)
+                const draftId = document.getElementById('current-draft-id').value;
+                if(draftId) deleteDraft(draftId);
 
-                // Collect Victims
-                document.querySelectorAll('.victim-card').forEach(card => {
-                    let injType = card.querySelector('.victim-injury-select').value;
-                    const otherInj = card.querySelector('.victim-injury-other');
-                    if(injType === 'อื่นๆ' && otherInj.value) injType = otherInj.value;
-
-                    obj.victims.push({
-                        victimName: card.querySelector('.victim-name').value,
-                        victimId: card.querySelector('.victim-id').value,
-                        victimAge: card.querySelector('.victim-age').value,
-                        victimWorkYears: card.querySelector('.victim-work-years').value,
-                        victimDept: card.querySelector('.victim-dept').value,
-                        victimInjuryOrgan: card.querySelector('.victim-injury-organ').value,
-                        victimInjuryType: injType,
-                        victimTreatment: card.querySelector('.victim-treatment').value,
-                        victimDaysLost: card.querySelector('.victim-days-lost').value
-                    });
-                });
-
-                // Collect Investigators
-                const invContainer = document.getElementById('investigators-container');
-                Array.from(invContainer.children).forEach(row => {
-                    const inputs = row.querySelectorAll('input');
-                    obj.investigators.push({ invName: inputs[0].value, invPosition: inputs[1].value });
-                });
-
-                // Handle "Other" inputs for main form
-                if(obj.accidentCategory === 'อื่นๆ') obj.accidentCategory = document.getElementById('accident-category-other').value;
-                if(obj.accType === 'อื่นๆ') obj.accType = document.getElementById('acc-type-other').value;
-
-                // 3. Send to GAS
-                const res = await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(obj) });
+                const res = await fetch(WEB_APP_URL, { method: "POST", body: JSON.stringify(dataObject) });
                 const result = await res.json();
 
                 if (result.status === 'success') {
@@ -942,7 +1313,6 @@
                 } else {
                     throw new Error(result.message);
                 }
-
             } catch (err) {
                 alert('Error: ' + err.message);
             } finally {
@@ -952,12 +1322,9 @@
             }
         });
 
-        // --- LOAD DATA ---
-
         async function loadAllReportsList() {
             const container = document.getElementById('all-reports-list-container');
             container.innerHTML = '<div class="flex justify-center p-4"><div class="loader h-8 w-8 rounded-full border-2 border-t-red-500"></div></div>';
-            
             try {
                 const res = await fetch(`${WEB_APP_URL}?action=getReports`);
                 const json = await res.json();
@@ -972,7 +1339,6 @@
             const search = document.getElementById('all-reports-search').value.toLowerCase();
             const branch = document.getElementById('all-reports-branch-filter').value;
             const container = document.getElementById('all-reports-list-container');
-            
             const filtered = allReportsData.filter(r => {
                 const matchSearch = JSON.stringify(r).toLowerCase().includes(search);
                 const matchBranch = branch === "" || r.branch === branch;
@@ -985,20 +1351,18 @@
             }
 
             container.innerHTML = filtered.map(r => `
-                <div class="bg-white p-4 rounded-xl border border-slate-100 hover:shadow-md transition-shadow cursor-pointer group">
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <div class="flex items-center gap-2 mb-1">
-                                <span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-md font-mono">${r.ReportID}</span>
-                                <span class="text-slate-500 text-xs">${r.accDate?.split(' ')[0]}</span>
-                            </div>
-                            <h4 class="font-bold text-slate-800 group-hover:text-blue-600 transition-colors">${r.accidentCategory || 'ไม่ระบุประเภท'}</h4>
-                            <p class="text-sm text-slate-500 mt-1">${r.accLocation || '-'}</p>
+                <div class="bg-white p-4 rounded-xl border border-slate-100 hover:shadow-md transition-shadow cursor-pointer group flex justify-between items-center">
+                    <div onclick="toggleIncidentForm(true); /* Logic to edit would go here */">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-md font-mono">${r.ReportID}</span>
+                            <span class="text-slate-500 text-xs">${r.accDate?.split(' ')[0]}</span>
                         </div>
-                        <span class="px-2 py-1 rounded-lg text-xs font-semibold ${r.branch ? 'bg-blue-50 text-blue-600' : 'bg-slate-100 text-slate-500'}">
-                            ${r.branch || 'N/A'}
-                        </span>
+                        <h4 class="font-bold text-slate-800 group-hover:text-blue-600 transition-colors">${r.accidentCategory || 'ไม่ระบุประเภท'}</h4>
+                        <p class="text-sm text-slate-500 mt-1">${r.branch} • ${r.accLocation || '-'}</p>
                     </div>
+                    <button onclick="openPrintModal('${r.ReportID}')" class="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors" title="พิมพ์รายงาน">
+                        <i class="ph-bold ph-printer text-xl"></i>
+                    </button>
                 </div>
             `).join('');
         }
@@ -1009,7 +1373,6 @@
                 const json = await res.json();
                 if(json.status === 'success') {
                     const data = json.data;
-                    // Calc Stats
                     const totalCost = data.reduce((sum, r) => sum + (parseFloat(r.damageCost) || 0), 0);
                     let totalDays = 0;
                     data.forEach(r => {
@@ -1017,12 +1380,9 @@
                         if(typeof victims === 'string') try { victims = JSON.parse(victims); } catch(e){}
                         if(Array.isArray(victims)) totalDays += victims.reduce((acc, v) => acc + (parseFloat(v.victimDaysLost)||0), 0);
                     });
-
                     document.getElementById('stat-total-reports').innerText = data.length;
                     document.getElementById('stat-total-cost').innerText = totalCost.toLocaleString('th-TH', {minimumFractionDigits: 2});
                     document.getElementById('stat-total-days-lost').innerText = totalDays;
-
-                    // Update Charts
                     updateCharts(data);
                 }
             } catch(e) { console.error(e); }
@@ -1031,14 +1391,11 @@
         function updateCharts(data) {
             const months = Array(12).fill(0);
             const categories = {};
-            
             data.forEach(r => {
                 if(r.accDate) { try { months[new Date(r.accDate).getMonth()]++; } catch(e){} }
                 const c = r.accidentCategory || 'อื่นๆ';
                 categories[c] = (categories[c] || 0) + 1;
             });
-
-            // Month Chart
             const ctxMonth = document.getElementById('monthChart');
             if(monthChartInstance) monthChartInstance.destroy();
             monthChartInstance = new Chart(ctxMonth, {
@@ -1049,8 +1406,6 @@
                 },
                 options: { responsive: true, plugins: { legend: {display:false} } }
             });
-
-            // Category Chart
             const ctxCat = document.getElementById('categoryChart');
             if(categoryChartInstance) categoryChartInstance.destroy();
             categoryChartInstance = new Chart(ctxCat, {
@@ -1063,46 +1418,32 @@
             });
         }
 
-        // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             loadBranchOptions();
             loadAccidentTypes();
             addInvestigator();
             addVictim();
-            // Optional: load dashboard initially if active tab
             if(document.getElementById('btn-dashboard').classList.contains('active')) loadDashboardData();
         });
 
-        // Other Input Logic
         document.getElementById('accident-category').addEventListener('change', function() {
             const other = document.getElementById('accident-category-other');
             if(this.value === 'อื่นๆ') { other.classList.remove('hidden'); other.required = true; } 
             else { other.classList.add('hidden'); other.required = false; }
-            
-            // Trigger Victim Requirements Update
             updateVictimRequirements();
         });
-        
         document.getElementById('acc-type').addEventListener('change', function() {
             const other = document.getElementById('acc-type-other');
             if(this.value === 'อื่นๆ') { other.classList.remove('hidden'); other.required = true; } 
             else { other.classList.add('hidden'); other.required = false; }
         });
-        
-        // Event delegation for dynamic victim injury "Other"
         document.getElementById('victims-container').addEventListener('change', function(e) {
             if(e.target.classList.contains('victim-injury-select')) {
                 const otherInput = e.target.parentElement.querySelector('.victim-injury-other');
-                if(e.target.value === 'อื่นๆ') {
-                    otherInput.classList.remove('hidden');
-                    otherInput.required = true;
-                } else {
-                    otherInput.classList.add('hidden');
-                    otherInput.required = false;
-                }
+                if(e.target.value === 'อื่นๆ') { otherInput.classList.remove('hidden'); otherInput.required = true; } 
+                else { otherInput.classList.add('hidden'); otherInput.required = false; }
             }
         });
-
     </script>
 </body>
 </html>
