@@ -144,60 +144,79 @@
         @-webkit-keyframes spin { 0% { -webkit-transform: rotate(0deg); } 100% { -webkit-transform: rotate(360deg); } }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* --- PRINT SPECIFIC CSS --- */
+        /* --- PRINT SPECIFIC CSS (Improved) --- */
         @media print {
             @page {
-                size: A4;
+                size: A4 portrait;
                 margin: 10mm 15mm;
             }
             html, body {
                 background: #fff !important;
                 font-size: 10pt !important;
                 width: 100% !important;
-                height: auto !important;
+                height: 100% !important;
                 padding: 0 !important; 
                 margin: 0 !important;
                 overflow: visible !important;
             }
+            
             /* Hide UI Elements */
-            #sidebar, header, #incident-list-view, #section-dashboard, #section-epermit, #section-inspection, #section-training, #section-risk, #section-settings, #form-actions-container, #mobile-overlay, #draft-sidebar, #message-area, .no-print {
+            #sidebar, header, main > *:not(#report-details-modal), #mobile-overlay, #draft-sidebar, #message-area, #draft-modal {
                 display: none !important;
             }
-            /* Modal overrides for print */
+
+            /* Reset Modal Container */
             #report-details-modal {
                 display: block !important;
-                position: static !important;
-                inset: auto !important;
-                background: none !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
                 width: 100% !important;
                 height: auto !important;
+                margin: 0 !important;
                 padding: 0 !important;
-                z-index: auto !important;
+                background: white !important;
+                z-index: 9999 !important;
+                inset: 0 !important;
+                overflow: visible !important;
             }
+
+            /* Reset Modal Inner Wrapper */
             #report-details-modal > div {
                 box-shadow: none !important;
-                max-width: 100% !important;
+                max-width: none !important;
+                width: 100% !important;
                 margin: 0 !important;
                 border: none !important;
+                border-radius: 0 !important;
+                padding: 0 !important;
+                position: static !important;
             }
+
+            /* Reset Content Area */
             #report-details-content {
                 padding: 0 !important;
                 margin: 0 !important;
                 overflow: visible !important;
+                width: 100% !important;
+                height: auto !important;
             }
+
+            /* Hide Modal Actions */
             #modal-header-actions {
                 display: none !important;
             }
             
-            /* Restore Form Styles for Print */
+            /* Ensure Form Elements Look Good */
             .input-box-style {
                 background-color: #ffffff !important;
                 border: 1px solid #d1d5db !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
                 padding: 2px 5px !important;
                 min-height: auto !important;
                 font-size: 10pt !important;
+                color: #000 !important;
             }
             .print-no-border {
                 border: none !important;
@@ -205,9 +224,11 @@
             }
             .print-bg-gray {
                 background-color: #f9fafb !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
             }
+            
+            /* Page Break Control */
             .print-page-break {
                 page-break-before: always !important;
                 display: block;
@@ -216,11 +237,19 @@
             .page-break-inside-avoid {
                 page-break-inside: avoid;
             }
+            
+            /* Section Headers */
             .section-header {
                 border-bottom: none !important;
-                margin-top: 10px !important;
+                margin-top: 15px !important;
                 margin-bottom: 5px !important;
                 font-size: 11pt !important;
+                color: #000 !important;
+            }
+            
+            /* Images */
+            img {
+                max-width: 100% !important;
             }
         }
     </style>
@@ -712,7 +741,7 @@
     <div id="report-details-modal" class="fixed inset-0 bg-black bg-opacity-75 z-[60] p-0 sm:p-4 hidden flex items-center justify-center">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-full sm:max-h-[90vh] flex flex-col relative">
             <div id="modal-header-actions" class="flex justify-between items-center p-4 border-b bg-white rounded-t-lg sticky top-0 z-10">
-                <h2 class="text-lg font-bold text-slate-800">ตัวอย่างก่อนพิมพ์</h2>
+                <h2 class="text-lg font-bold text-slate-800">รายละเอียดอุบัติเหตุ</h2>
                 <div class="flex gap-2">
                     <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
                         <i class="ph-bold ph-printer"></i> พิมพ์เอกสาร
@@ -853,8 +882,6 @@
             document.getElementById('investigators-container').innerHTML = '';
             document.getElementById('victims-container').innerHTML = '';
             
-            // Populate logic simplified for brevity (reusing structure logic)
-            // Ideally call a shared populate function, but for now manual:
             const data = draft.data;
             Object.keys(data).forEach(k => {
                 if(k !== 'investigators' && k !== 'victims') {
@@ -863,11 +890,9 @@
                 }
             });
             
-            // Handle Victims & Investigators
             if(data.victims && data.victims.length) data.victims.forEach(addVictim); else addVictim();
             if(data.investigators && data.investigators.length) data.investigators.forEach(addInvestigator); else addInvestigator();
             
-            // Handle "Other" toggles
             document.getElementById('accident-category').dispatchEvent(new Event('change'));
             document.getElementById('acc-type').dispatchEvent(new Event('change'));
 
@@ -882,7 +907,7 @@
             renderDraftList();
         }
 
-        // --- PRINT SYSTEM ---
+        // --- PRINT SYSTEM & DETAILS VIEW ---
         async function openPrintModal(id) {
             const modal = document.getElementById('report-details-modal');
             const content = document.getElementById('report-details-content');
@@ -890,16 +915,11 @@
             content.innerHTML = '<div class="flex justify-center p-10"><div class="loader h-10 w-10 rounded-full border-2 border-t-blue-600"></div></div>';
             
             try {
-                // Check if local data has full details first to save API call
-                const report = allReportsData.find(r => r.ReportID == id);
-                let fullData = null;
-                
-                // If we need detailed nested data not in list view, fetch it
+                // Fetch full details
                 const res = await fetch(`${WEB_APP_URL}?action=getReportDetails&id=${encodeURIComponent(id)}`);
                 const json = await res.json();
                 if(json.status === 'success') {
-                    fullData = json.data;
-                    content.innerHTML = generateReportHTML(fullData);
+                    content.innerHTML = generateReportHTML(json.data);
                 } else {
                     content.innerHTML = '<p class="text-center text-red-500">โหลดข้อมูลไม่สำเร็จ</p>';
                 }
@@ -918,20 +938,19 @@
             if(typeof inv === 'string') try { inv = JSON.parse(inv); } catch(e){ inv = []; }
             let victims = data.victims || [];
             if(typeof victims === 'string') try { victims = JSON.parse(victims); } catch(e){ victims = []; }
-            if(!victims.length && r.victimName) victims = [r]; // Legacy fallback
+            if(!victims.length && r.victimName) victims = [r]; 
 
             const box = (val, center = false, noBorder = false) => `
                 <div class="input-box-style ${center ? 'text-center justify-center' : ''} ${noBorder ? 'print-no-border' : ''} flex items-start bg-[#f0f0f0] break-words break-all px-2 py-0.5 h-auto !min-h-0">
                     ${val || '-'}
                 </div>`;
+            
             const textBox = (val, noBorder = false) => `
-                <div class="input-box-style ${noBorder ? 'print-no-border' : ''} bg-[#f0f0f0] p-2 min-h-[8rem] whitespace-pre-wrap break-words break-all">
-                    ${val || '-'}
-                </div>`;
+                <div class="input-box-style ${noBorder ? 'print-no-border' : ''} bg-[#f0f0f0] p-2 min-h-[8rem] whitespace-pre-wrap break-words break-all">${val || '-'}</div>`;
+                
             const dateFmt = (d) => d ? d.split(' ')[0] : '-';
             const formatTime = (t) => t ? (t.match(/\d{2}:\d{2}/) || [t])[0] : '-';
 
-            // HTML Structure copied exactly from index(5).html for printing
             return `
                 <div class="max-w-4xl mx-auto font-sarabun text-black">
                     <div class="mb-2 pb-0 relative">
@@ -964,18 +983,18 @@
                                 <div class="w-32">${box(dateFmt(r.dateIssued), true, true)}</div>
                             </div>
                         </div>
-                        <div class="flex flex-wrap justify-center gap-4">
-                            <div class="flex items-center gap-2">
+                        <div class="flex justify-center gap-2">
+                            <div class="flex items-center gap-1">
                                 <span class="font-bold whitespace-nowrap">ประเภทอุบัติเหตุ:</span>
-                                <div class="w-40">${box(r.accidentCategory, false, true)}</div>
+                                <div class="w-32">${box(r.accidentCategory, false, true)}</div>
                             </div>
-                             <div class="flex items-center gap-2">
+                             <div class="flex items-center gap-1">
                                 <span class="font-bold whitespace-nowrap">ผู้ได้รับผลกระทบ:</span>
-                                <div class="w-40">${box(r.affectedPersonType, false, true)}</div>
+                                <div class="w-32">${box(r.affectedPersonType, false, true)}</div>
                             </div>
-                             <div class="flex items-center gap-2">
+                             <div class="flex items-center gap-1">
                                 <span class="font-bold whitespace-nowrap">ช่วงเวลา:</span>
-                                <div class="w-40">${box(r.workShift, false, true)}</div>
+                                <div class="w-32">${box(r.workShift, false, true)}</div>
                             </div>
                         </div>
                     </div>
@@ -1014,8 +1033,6 @@
                          </div>
                     </div>
                     
-                    <div class="print-page-break"></div>
-
                     <div class="mb-6">
                         <h2 class="section-header">ส่วนที่ 2: ความเสียหาย (${victims.length} ราย)</h2>
                         ${victims.map((v, idx) => `
@@ -1052,13 +1069,13 @@
                     <div class="mb-6">
                         <h2 class="section-header">ส่วนที่ 4: ความคิดเห็นเพิ่มเติม</h2>
                         <div class="space-y-2 text-sm">
-                             <div class="flex items-center gap-2"><span class="font-bold w-48 flex-shrink-0">ข้อเสนอแนะเพื่อการป้องกัน:</span> <div class="flex-grow">${box(r.opinionPrevention, false, true)}</div></div>
-                             <div class="flex items-center gap-2"><span class="font-bold w-48 flex-shrink-0">ความเห็นผู้ประสบเหตุ:</span> <div class="flex-grow">${box(r.opinionVictim, false, true)}</div></div>
-                             <div class="flex items-center gap-2"><span class="font-bold w-48 flex-shrink-0">ความเห็นของ SM:</span> <div class="flex-grow">${box(r.opinionSM, false, true)}</div></div>
-                             <div class="flex items-center gap-2"><span class="font-bold w-48 flex-shrink-0">ความเห็นของ DM:</span> <div class="flex-grow">${box(r.opinionDM, false, true)}</div></div>
-                             <div class="flex items-center gap-2"><span class="font-bold w-48 flex-shrink-0">ความเห็นของ GM:</span> <div class="flex-grow">${box(r.opinionGM, false, true)}</div></div>
-                             <div class="flex items-center gap-2"><span class="font-bold w-48 flex-shrink-0">ความเห็น จป./Loss Prevention:</span> <div class="flex-grow">${box(r.opinionSafety, false, true)}</div></div>
-                             <div class="flex items-center gap-2"><span class="font-bold w-48 flex-shrink-0">บทลงโทษ (ถ้ามี):</span> <div class="flex-grow">${box(r.penalty, false, true)}</div></div>
+                             <div class="flex items-start gap-2"><span class="font-bold w-48 flex-shrink-0 mt-0.5">ข้อเสนอแนะเพื่อการป้องกัน:</span> <div class="flex-grow">${box(r.opinionPrevention, false, true)}</div></div>
+                             <div class="flex items-start gap-2"><span class="font-bold w-48 flex-shrink-0 mt-0.5">ความเห็นผู้ประสบเหตุ:</span> <div class="flex-grow">${box(r.opinionVictim, false, true)}</div></div>
+                             <div class="flex items-start gap-2"><span class="font-bold w-48 flex-shrink-0 mt-0.5">ความเห็นของ SM:</span> <div class="flex-grow">${box(r.opinionSM, false, true)}</div></div>
+                             <div class="flex items-start gap-2"><span class="font-bold w-48 flex-shrink-0 mt-0.5">ความเห็นของ DM:</span> <div class="flex-grow">${box(r.opinionDM, false, true)}</div></div>
+                             <div class="flex items-start gap-2"><span class="font-bold w-48 flex-shrink-0 mt-0.5">ความเห็นของ GM:</span> <div class="flex-grow">${box(r.opinionGM, false, true)}</div></div>
+                             <div class="flex items-start gap-2"><span class="font-bold w-48 flex-shrink-0 mt-0.5">ความเห็น จป./Loss Prevention:</span> <div class="flex-grow">${box(r.opinionSafety, false, true)}</div></div>
+                             <div class="flex items-start gap-2"><span class="font-bold w-48 flex-shrink-0 mt-0.5">บทลงโทษ (ถ้ามี):</span> <div class="flex-grow">${box(r.penalty, false, true)}</div></div>
                         </div>
                     </div>
 
@@ -1103,12 +1120,20 @@
                 form.classList.remove('hidden');
                 document.getElementById('date-issued').valueAsDate = new Date();
                 updateAutoIssueNo();
+                // Change Button Text to Save
+                document.getElementById('button-text').textContent = 'ส่งรายงาน';
             } else {
                 form.classList.add('hidden');
                 list.classList.remove('hidden');
                 document.getElementById('accident-form').reset();
                 document.getElementById('current-draft-id').value = '';
+                document.getElementById('edit-report-id').value = ''; // Clear edit ID
+                document.getElementById('image-preview').classList.add('hidden');
+                document.getElementById('upload-placeholder').classList.remove('hidden');
+                document.getElementById('victims-container').innerHTML = '';
+                document.getElementById('investigators-container').innerHTML = '';
                 addVictim({});
+                addInvestigator({});
             }
         }
 
@@ -1184,6 +1209,9 @@
             const date = document.getElementById('date-issued').value;
             const issueInput = document.getElementById('issue-no');
             if (!branch) return;
+            // Only update if not editing existing report
+            if(document.getElementById('edit-report-id').value) return;
+
             issueInput.value = "กำลังคำนวณ...";
             try {
                 const res = await fetch(`${WEB_APP_URL}?action=getNextIssueNo&branch=${encodeURIComponent(branch)}&date=${encodeURIComponent(date)}`);
@@ -1235,8 +1263,8 @@
             const div = document.createElement('div');
             div.className = 'grid grid-cols-1 sm:grid-cols-3 gap-2 items-end p-2 bg-slate-50 rounded-lg border border-slate-100';
             div.innerHTML = `
-                <div><input type="text" class="input-box-style" placeholder="ชื่อ-สกุล" value="${data.invName||''}" required></div>
-                <div><input type="text" class="input-box-style" placeholder="ตำแหน่ง" value="${data.invPosition||''}" required></div>
+                <div><input type="text" class="input-box-style" placeholder="ชื่อ-สกุล" value="${data.invName || data.InvName || ''}" required></div>
+                <div><input type="text" class="input-box-style" placeholder="ตำแหน่ง" value="${data.invPosition || data.InvPosition || ''}" required></div>
                 <div class="relative"><input type="text" class="input-box-style bg-gray-100 text-gray-400" disabled value="ลงชื่อในเอกสารจริง">
                 ${container.children.length > 0 ? '<button type="button" onclick="this.closest(\'div\').parentElement.remove()" class="absolute right-0 bottom-0 p-2 text-red-500 hover:text-red-700">×</button>' : ''}</div>`;
             container.appendChild(div);
@@ -1295,11 +1323,16 @@
                 }
 
                 const dataObject = getFormDataObject();
-                dataObject.action = document.getElementById('edit-report-id').value ? 'updateReport' : 'saveReport';
-                if(dataObject.action === 'updateReport') dataObject.reportId = document.getElementById('edit-report-id').value;
+                // Determine Action
+                const editId = document.getElementById('edit-report-id').value;
+                if(editId) {
+                    dataObject.action = 'updateReport';
+                    dataObject.reportId = editId;
+                } else {
+                    dataObject.action = 'saveReport';
+                }
                 dataObject.imageUrl = imageUrl;
                 
-                // If saved from draft, include draft id to delete it later if needed (optional)
                 const draftId = document.getElementById('current-draft-id').value;
                 if(draftId) deleteDraft(draftId);
 
@@ -1351,8 +1384,8 @@
             }
 
             container.innerHTML = filtered.map(r => `
-                <div class="bg-white p-4 rounded-xl border border-slate-100 hover:shadow-md transition-shadow cursor-pointer group flex justify-between items-center">
-                    <div onclick="toggleIncidentForm(true); /* Logic to edit would go here */">
+                <div class="bg-white p-4 rounded-xl border border-slate-100 hover:shadow-md transition-shadow group flex justify-between items-center">
+                    <div class="cursor-pointer flex-1" onclick="openPrintModal('${r.ReportID}')">
                         <div class="flex items-center gap-2 mb-1">
                             <span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded-md font-mono">${r.ReportID}</span>
                             <span class="text-slate-500 text-xs">${r.accDate?.split(' ')[0]}</span>
@@ -1360,11 +1393,118 @@
                         <h4 class="font-bold text-slate-800 group-hover:text-blue-600 transition-colors">${r.accidentCategory || 'ไม่ระบุประเภท'}</h4>
                         <p class="text-sm text-slate-500 mt-1">${r.branch} • ${r.accLocation || '-'}</p>
                     </div>
-                    <button onclick="openPrintModal('${r.ReportID}')" class="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors" title="พิมพ์รายงาน">
-                        <i class="ph-bold ph-printer text-xl"></i>
-                    </button>
+                    <div class="flex gap-2">
+                        <button onclick="openPrintModal('${r.ReportID}')" class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="ดูข้อมูล">
+                            <i class="ph-bold ph-eye text-xl"></i>
+                        </button>
+                        <button onclick="editReport('${r.ReportID}')" class="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title="แก้ไข">
+                            <i class="ph-bold ph-pencil-simple text-xl"></i>
+                        </button>
+                        <button onclick="deleteReport('${r.ReportID}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="ลบ">
+                            <i class="ph-bold ph-trash text-xl"></i>
+                        </button>
+                    </div>
                 </div>
             `).join('');
+        }
+
+        // --- NEW: EDIT & DELETE FUNCTIONS ---
+
+        async function editReport(id) {
+            const list = document.getElementById('incident-list-view');
+            list.innerHTML += '<div id="loading-overlay" class="absolute inset-0 bg-white/50 z-50 flex items-center justify-center"><div class="loader h-10 w-10 border-t-blue-600 rounded-full border-4"></div></div>';
+            
+            try {
+                const res = await fetch(`${WEB_APP_URL}?action=getReportDetails&id=${encodeURIComponent(id)}`);
+                const json = await res.json();
+                document.getElementById('loading-overlay')?.remove();
+
+                if(json.status === 'success') {
+                    const data = json.data;
+                    const r = data.report;
+                    
+                    // Switch to Form View
+                    toggleIncidentForm(true);
+                    document.getElementById('button-text').textContent = 'บันทึกการแก้ไข';
+                    
+                    // Populate Fields
+                    document.getElementById('edit-report-id').value = id;
+                    document.getElementById('existing-image-url').value = r.imageUrl || '';
+                    if(r.imageUrl) {
+                        document.getElementById('image-preview').src = r.imageUrl;
+                        document.getElementById('image-preview').classList.remove('hidden');
+                        document.getElementById('upload-placeholder').classList.add('hidden');
+                    }
+
+                    // Map fields
+                    const fields = ['branch', 'dateIssued', 'issueNo', 'accidentCategory', 'affectedPersonType', 'workShift', 
+                                    'accDate', 'accTime', 'accLocation', 'accPerpetrator', 'accActivity', 'accMachine', 
+                                    'accPPE', 'accType', 'accDetails', 'accPrevention', 'accWitness', 'accWitnessDept',
+                                    'damageCost', 'damageDetails', 'causeUnsafeAct', 'causeUnsafeCondition', 'causeCorrection',
+                                    'opinionPrevention', 'opinionVictim', 'opinionSM', 'opinionDM', 'opinionGM', 'opinionSafety', 'penalty'];
+                    
+                    fields.forEach(f => {
+                        const el = document.getElementById(f.replace(/([A-Z])/g, '-$1').toLowerCase()) || document.getElementsByName(f)[0];
+                        if(el) el.value = r[f] || '';
+                    });
+
+                    // Handle "Other" Dropdowns
+                    if(!['ทรัพย์สินเสียหาย', 'บาดเจ็บส่งรพ.', 'ปฐมพยาบาล'].includes(r.accidentCategory) && r.accidentCategory) {
+                        document.getElementById('accident-category').value = 'อื่นๆ';
+                        document.getElementById('accident-category-other').value = r.accidentCategory;
+                        document.getElementById('accident-category-other').classList.remove('hidden');
+                    }
+                    // Note: Ideally accType logic should be dynamic based on loaded options, simplified here:
+                    const accTypeSelect = document.getElementById('acc-type');
+                    // Wait slightly for options to load if needed, or assume loaded
+                    if([...accTypeSelect.options].map(o=>o.value).includes(r.accType)) {
+                        accTypeSelect.value = r.accType;
+                    } else if (r.accType) {
+                        accTypeSelect.value = 'อื่นๆ';
+                        document.getElementById('acc-type-other').value = r.accType;
+                        document.getElementById('acc-type-other').classList.remove('hidden');
+                    }
+
+                    // Victims
+                    document.getElementById('victims-container').innerHTML = '';
+                    let victims = data.victims || [];
+                    if(typeof victims === 'string') try { victims = JSON.parse(victims); } catch(e){}
+                    if(victims.length === 0 && r.victimName) victims = [r]; // Legacy fallback
+                    victims.forEach(v => addVictim(v));
+
+                    // Investigators
+                    document.getElementById('investigators-container').innerHTML = '';
+                    let inv = data.investigators || [];
+                    if(typeof inv === 'string') try { inv = JSON.parse(inv); } catch(e){}
+                    inv.forEach(i => addInvestigator(i));
+
+                } else {
+                    alert('ไม่สามารถดึงข้อมูลได้: ' + json.message);
+                }
+            } catch(e) {
+                document.getElementById('loading-overlay')?.remove();
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+                console.error(e);
+            }
+        }
+
+        async function deleteReport(id) {
+            if(!confirm('คุณต้องการลบรายการนี้ใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้')) return;
+            
+            try {
+                // Optimistic UI update (optional, but safer to wait)
+                const res = await fetch(`${WEB_APP_URL}?action=deleteReport&id=${encodeURIComponent(id)}`, { method: 'POST' }); // Usually POST for delete action in GAS
+                const json = await res.json();
+                
+                if(json.status === 'success') {
+                    showMessage('ลบรายการสำเร็จ', 'success');
+                    loadAllReportsList(); // Refresh list
+                } else {
+                    alert('ลบไม่สำเร็จ: ' + json.message);
+                }
+            } catch(e) {
+                alert('เกิดข้อผิดพลาดในการลบ');
+            }
         }
 
         async function loadDashboardData() {
