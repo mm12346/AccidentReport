@@ -1488,13 +1488,29 @@
                 return;
             }
 
-            // Prepare data for Excel (Flattening objects if needed)
+            // Prepare data for Excel (Full Data Mapping)
             const dataToExport = filtered.map(r => {
                  // Parse victims if string
                 let victims = r.victims;
                 if(typeof victims === 'string') try { victims = JSON.parse(victims); } catch(e){}
+                if(!Array.isArray(victims)) victims = [];
+
+                // Parse investigators if string
+                let investigators = r.investigators;
+                if(typeof investigators === 'string') try { investigators = JSON.parse(investigators); } catch(e){}
+                if(!Array.isArray(investigators)) investigators = [];
                 
-                // Format for Excel
+                // Format Victims String (Combine multiple victims into one cell)
+                const victimDetails = victims.map((v, i) => 
+                    `${i+1}. ${v.victimName} (รหัส: ${v.victimId}) - อาการ: ${v.victimInjuryType || '-'} / อวัยวะ: ${v.victimInjuryOrgan || '-'} / รักษา: ${v.victimTreatment || '-'} / หยุดงาน: ${v.victimDaysLost || 0} วัน`
+                ).join('\n');
+
+                // Format Investigators String
+                const investigatorDetails = investigators.map((inv, i) =>
+                    `${i+1}. ${inv.invName || inv.InvName} (${inv.invPosition || inv.InvPosition})`
+                ).join('\n');
+
+                // Format for Excel (All Fields)
                 return {
                     "รหัสรายงาน": r.ReportID,
                     "สาขา": r.branch,
@@ -1511,17 +1527,32 @@
                     "เครื่องมือ": r.accMachine,
                     "PPE": r.accPPE,
                     "ลักษณะอุบัติเหตุ": r.accType,
-                    "รายละเอียด": r.accDetails,
-                    "ความเสียหาย (บาท)": r.damageCost,
-                    "จำนวนผู้บาดเจ็บ": Array.isArray(victims) ? victims.length : 0,
-                    "ผู้สอบสวน": r.invName || "ไม่ระบุ" // Could be more detailed if needed
+                    "รายละเอียดเหตุการณ์": r.accDetails,
+                    "การป้องกันแก้ไขเบื้องต้น": r.accPrevention,
+                    "พยาน": r.accWitness,
+                    "แผนกพยาน": r.accWitnessDept,
+                    "มูลค่าความเสียหาย (บาท)": r.damageCost,
+                    "รายละเอียดความเสียหาย": r.damageDetails,
+                    "การกระทำที่ไม่ปลอดภัย (Unsafe Act)": r.causeUnsafeAct,
+                    "สภาพการณ์ที่ไม่ปลอดภัย (Unsafe Condition)": r.causeUnsafeCondition,
+                    "แนวทางแก้ไข/ป้องกันการเกิดซ้ำ": r.causeCorrection,
+                    "ข้อเสนอแนะเพื่อการป้องกัน": r.opinionPrevention,
+                    "ความเห็นผู้ประสบเหตุ": r.opinionVictim,
+                    "ความเห็น SM": r.opinionSM,
+                    "ความเห็น DM": r.opinionDM,
+                    "ความเห็น GM": r.opinionGM,
+                    "ความเห็น จป./Loss Prevention": r.opinionSafety,
+                    "บทลงโทษ": r.penalty,
+                    "ข้อมูลผู้บาดเจ็บ": victimDetails,
+                    "ผู้สอบสวน": investigatorDetails,
+                    "รูปภาพ (URL)": r.imageUrl
                 };
             });
 
             const ws = XLSX.utils.json_to_sheet(dataToExport);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Incident Reports");
-            XLSX.writeFile(wb, "Incident_Reports.xlsx");
+            XLSX.writeFile(wb, "Full_Incident_Reports.xlsx");
         }
 
         // --- NEW: EDIT & DELETE FUNCTIONS ---
