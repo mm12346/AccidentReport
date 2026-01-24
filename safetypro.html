@@ -1429,9 +1429,17 @@
                     
                     // Populate Fields
                     document.getElementById('edit-report-id').value = id;
-                    document.getElementById('existing-image-url').value = r.imageUrl || '';
-                    if(r.imageUrl) {
-                        document.getElementById('image-preview').src = r.imageUrl;
+                    
+                    // Handle Image
+                    const imgUrl = r.imageUrl || r.ImageUrl || '';
+                    document.getElementById('existing-image-url').value = imgUrl;
+                    
+                    // Reset State
+                    document.getElementById('image-preview').classList.add('hidden');
+                    document.getElementById('upload-placeholder').classList.remove('hidden');
+
+                    if(imgUrl && imgUrl !== 'Error' && imgUrl.trim() !== '') {
+                        document.getElementById('image-preview').src = imgUrl;
                         document.getElementById('image-preview').classList.remove('hidden');
                         document.getElementById('upload-placeholder').classList.add('hidden');
                     }
@@ -1445,7 +1453,24 @@
                     
                     fields.forEach(f => {
                         const el = document.getElementById(f.replace(/([A-Z])/g, '-$1').toLowerCase()) || document.getElementsByName(f)[0];
-                        if(el) el.value = r[f] || '';
+                        if(el) {
+                            let val = r[f] || '';
+                            
+                            // Handle Date Inputs (YYYY-MM-DD)
+                            if (el.type === 'date' && val) {
+                                // Split by T or space to get date part if ISO/datetime string
+                                val = val.split('T')[0].split(' ')[0]; 
+                            }
+                            
+                            // Handle Time Inputs (HH:mm)
+                            if (el.type === 'time' && val) {
+                                // Extract HH:mm pattern
+                                let match = val.match(/(\d{2}:\d{2})/);
+                                if (match) val = match[0];
+                            }
+
+                            el.value = val;
+                        }
                     });
 
                     // Handle "Other" Dropdowns
