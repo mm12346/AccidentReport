@@ -360,7 +360,7 @@
                         <select id="dashboard-year-filter" class="input-box-style w-24" onchange="filterDashboard()">
                             <option value="">ทั้งหมด</option>
                             <option value="2026">2026</option>
-                            <option value="2025" selected>2025</option>
+                            <option value="2025">2025</option>
                             <option value="2024">2024</option>
                             <option value="2023">2023</option>
                         </select>
@@ -1890,6 +1890,28 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
+            // Auto-select Current Year for Dashboard
+            const currentYear = new Date().getFullYear().toString();
+            const yearSelect = document.getElementById('dashboard-year-filter');
+            if (yearSelect) {
+                // Check if the current year exists in options
+                const hasYear = Array.from(yearSelect.options).some(opt => opt.value === currentYear);
+                
+                // If not, add it dynamically
+                if (!hasYear) {
+                    const newOpt = new Option(currentYear, currentYear);
+                    // Insert after "All" option (index 1)
+                    if (yearSelect.options.length > 0) {
+                        yearSelect.add(newOpt, 1);
+                    } else {
+                        yearSelect.add(newOpt);
+                    }
+                }
+                
+                // Set the value to current year
+                yearSelect.value = currentYear;
+            }
+
             loadBranchOptions();
             loadAccidentTypes();
             addInvestigator();
