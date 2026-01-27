@@ -429,7 +429,7 @@
                         <label for="acc-type" class="label-style w-32 flex-shrink-0">ลักษณะอุบัติเหตุ <span class="text-red-500">*</span></label>
                         <div class="flex-grow flex flex-col sm:flex-row gap-2">
                             <select id="acc-type" name="accType" class="input-box-style flex-grow bg-white" required>
-                                <option value="">-- รอข้อมูล... --</option>
+                                <option value="">-- เลือก --</option>
                             </select>
                             <input type="text" id="acc-type-other" class="input-box-style flex-grow hidden" placeholder="ระบุลักษณะอุบัติเหตุ">
                         </div>
@@ -526,8 +526,8 @@
                 <h2 class="section-header">ส่วนที่ 4: ความคิดเห็นเพิ่มเติม</h2>
                 <div class="space-y-3">
                     <div>
-                        <label for="opinion-prevention" class="label-style">ข้อเสนอแนะเพื่อการป้องกัน <span class="text-red-500">*</span></label>
-                        <input type="text" id="opinion-prevention" name="opinionPrevention" class="input-box-style" required>
+                        <label for="opinion-prevention" class="label-style">ข้อเสนอแนะเพื่อการป้องกัน</label>
+                        <input type="text" id="opinion-prevention" name="opinionPrevention" class="input-box-style">
                     </div>
                     <div>
                         <label for="opinion-victim" class="label-style">ความเห็นผู้ประสบเหตุ <span class="text-red-500">*</span></label>
@@ -848,6 +848,62 @@
         const CLOUDINARY_UPLOAD_PRESET = "Accident";
         const DRAFT_KEY = 'accidentFormDrafts';
 
+        // --- HARDCODED LISTS ---
+        
+        // รายการลักษณะอุบัติเหตุ (Accident Types) - สาเหตุ/เหตุการณ์
+        const ACCIDENT_TYPES = [
+             "ตกจากที่สูง",
+		"หกล้ม ลื่นล้ม",
+		"อาคารหรือสิ่งก่อสร้างพังทับ",
+		"วัตถุหรือสิ่งของพังทลาย/หล่นทับ",
+		"วัตถุหรือสิ่งของกระแทกหรือชน",
+		"วัตถุหรือสิ่งของหนีบหรือดึง",
+		"วัตถุหรือสิ่งของตัด/บาด/ทิ่ม/แทง",
+		"วัตถุหรือสิ่งของกระเด็นเข้าตา",
+		"ยกหรือเคลื่อนย้ายของหนัก",
+		"อาการเจ็บป่วยจากท่าทางการทำงาน",
+		"อุบัติเหตุจากยานพาหนะ",
+		"อุบัติเหตุจากรถโฟล์คลิฟท์",
+		"วัตถุหรือสิ่งของระเบิด",
+		"ไฟฟ้าช็อต",
+		"ผลจากความ,ร้อนสูงหรือสัมผัสของร้อน",
+		"ผลจากความเย็นจัดหรือสัมผัสความเย็น",
+		"สัมผัสสิ่งมีพิษ สารเคมี แพ้จากการสัมผัสสิ่งของ",
+		"อันตรายจากแสง",
+		"อันตรายจากรังสี",
+		"ถูกทำร้ายร่างกาย",
+		"ถูกสัตว์ทำร้าย",
+		"โรคเนื่องจากการทำงาน",
+		"อุบัติเหตุจากการเดิน",
+        ];
+
+        // รายการลักษณะการบาดเจ็บ (Injury Types) - ผลกระทบต่อร่างกาย
+        const INJURY_TYPES = [
+             "ตกจากที่สูง",
+		"หกล้ม ลื่นล้ม",
+		"อาคารหรือสิ่งก่อสร้างพังทับ",
+		"วัตถุหรือสิ่งของพังทลาย/หล่นทับ",
+		"วัตถุหรือสิ่งของกระแทกหรือชน",
+		"วัตถุหรือสิ่งของหนีบหรือดึง",
+		"วัตถุหรือสิ่งของตัด/บาด/ทิ่ม/แทง",
+		"วัตถุหรือสิ่งของกระเด็นเข้าตา",
+		"ยกหรือเคลื่อนย้ายของหนัก",
+		"อาการเจ็บป่วยจากท่าทางการทำงาน",
+		"อุบัติเหตุจากยานพาหนะ",
+		"อุบัติเหตุจากรถโฟล์คลิฟท์",
+		"วัตถุหรือสิ่งของระเบิด",
+		"ไฟฟ้าช็อต",
+		"ผลจากความ,ร้อนสูงหรือสัมผัสของร้อน",
+		"ผลจากความเย็นจัดหรือสัมผัสความเย็น",
+		"สัมผัสสิ่งมีพิษ สารเคมี แพ้จากการสัมผัสสิ่งของ",
+		"อันตรายจากแสง",
+		"อันตรายจากรังสี",
+		"ถูกทำร้ายร่างกาย",
+		"ถูกสัตว์ทำร้าย",
+		"โรคเนื่องจากการทำงาน",
+		"อุบัติเหตุจากการเดิน",
+        ];
+
         // --- DOM ELEMENTS ---
         const form = document.getElementById('accident-form');
         const submitButton = document.getElementById('submit-button');
@@ -934,7 +990,6 @@
         let allReportsData = [];
         let investigatorCount = 0;
         let victimCount = 0;
-        let injuryOptions = []; // Store global injury options
         
         // Chart Instances
         let branchChartInstance = null;
@@ -951,7 +1006,7 @@
         }
 
         loadBranchOptions();
-        loadAccidentTypes();
+        loadAccidentTypes(); // Now loads from static list
         addInvestigator();
         addVictim(); // Initial victim row
 
@@ -1184,8 +1239,9 @@
             const div = document.createElement('div');
             div.className = 'victim-card';
             
-            const injurySelectOptions = injuryOptions.map(opt => `<option value="${opt}" ${data.victimInjuryType === opt ? 'selected' : ''}>${opt}</option>`).join('');
-            const isOtherInjury = data.victimInjuryType && !injuryOptions.includes(data.victimInjuryType);
+            // Use INJURY_TYPES for victim injury dropdown
+            const injurySelectOptions = INJURY_TYPES.map(opt => `<option value="${opt}" ${data.victimInjuryType === opt ? 'selected' : ''}>${opt}</option>`).join('');
+            const isOtherInjury = data.victimInjuryType && !INJURY_TYPES.includes(data.victimInjuryType);
             
             div.innerHTML = `
                 <div class="flex justify-between items-center mb-4 border-b pb-2">
@@ -2381,41 +2437,23 @@
             }
         }
 
-        async function loadAccidentTypes() { 
-            try { 
-                const res = await fetch(`${WEB_APP_URL}?action=getAccidentTypes`); 
-                const json = await res.json(); 
-                if (json.status === 'success') { 
-                    const s = document.getElementById('acc-type');
-                    s.innerHTML = '<option value="">-- เลือก --</option>'; 
-                    
-                    // Populate global injury options
-                    injuryOptions = [...json.data];
-
-                    json.data.forEach(item => { 
-                        const o = document.createElement('option'); 
-                        o.value = item; 
-                        o.textContent = item; 
-                        s.appendChild(o); 
-                    });
-                    
-                    const otherOption = document.createElement('option');
-                    otherOption.value = 'อื่นๆ';
-                    otherOption.textContent = 'อื่นๆ (ระบุ)';
-                    s.appendChild(otherOption);
-
-                    // Update existing victim rows if any (though usually none at init)
-                    document.querySelectorAll('.victim-injury-select').forEach(sel => {
-                        const val = sel.value;
-                        sel.innerHTML = '<option value="">-- เลือก --</option>' + 
-                                        injuryOptions.map(opt => `<option value="${opt}">${opt}</option>`).join('') + 
-                                        '<option value="อื่นๆ">อื่นๆ (ระบุ)</option>';
-                        sel.value = val;
-                    });
-                } 
-            } catch (e) { 
-                console.error("Failed to load accident types:", e); 
-            } 
+        // Updated Function: Loads from CONSTANTS instead of API
+        function loadAccidentTypes() { 
+            const s = document.getElementById('acc-type');
+            s.innerHTML = '<option value="">-- เลือก --</option>'; 
+            
+            // Populate Accident Types (ลักษณะอุบัติเหตุ)
+            ACCIDENT_TYPES.forEach(item => { 
+                const o = document.createElement('option'); 
+                o.value = item; 
+                o.textContent = item; 
+                s.appendChild(o); 
+            });
+            
+            const otherOption = document.createElement('option');
+            otherOption.value = 'อื่นๆ';
+            otherOption.textContent = 'อื่นๆ (ระบุ)';
+            s.appendChild(otherOption);
         }
 
     </script>
