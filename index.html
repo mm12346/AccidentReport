@@ -1482,22 +1482,31 @@
         async function handleEditClick(id) {
             if(!id) return;
             closeReportDetailsModal();
-            const report = allReportsData.find(r => r.ReportID == id);
+            
+            // Switch view immediately so user sees something happening
             allPages.forEach(p => p.classList.add('hidden'));
             document.getElementById('page-home').classList.remove('hidden');
             
-            if (report) {
-                populateFormForEdit(report);
-            } else {
-                showMessage('กำลังดึงข้อมูล...', 'info');
-                try {
-                    const res = await fetch(`${WEB_APP_URL}?action=getReportDetails&id=${encodeURIComponent(id)}`);
-                    const json = await res.json();
-                    if (json.status === 'success') {
-                        const fullData = {...json.data.report, investigators: json.data.investigators, victims: json.data.victims};
-                        populateFormForEdit(fullData);
-                    }
-                } catch(e) { showMessage('โหลดข้อมูลไม่สำเร็จ', 'error'); }
+            showMessage('กำลังดึงข้อมูลเพื่อแก้ไข...', 'info');
+
+            // Always fetch detailed data for editing to ensure child tables (investigators, victims) are present
+            try {
+                const res = await fetch(`${WEB_APP_URL}?action=getReportDetails&id=${encodeURIComponent(id)}`);
+                const json = await res.json();
+                if (json.status === 'success') {
+                    // Merge separate data parts
+                    const fullData = {
+                        ...json.data.report, 
+                        investigators: json.data.investigators, 
+                        victims: json.data.victims
+                    };
+                    populateFormForEdit(fullData);
+                } else {
+                    showMessage('ไม่พบข้อมูลรายงาน', 'error');
+                }
+            } catch(e) { 
+                console.error(e);
+                showMessage('โหลดข้อมูลไม่สำเร็จ', 'error'); 
             }
         }
 
@@ -2018,7 +2027,14 @@
             investigatorCount++;
             const div = document.createElement('div');
             div.className = 'investigator-row grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 items-end p-2 border-b bg-gray-50 rounded';
-            div.innerHTML = `<div class="md:col-span-2"><label class="text-xs font-bold text-gray-500">ชื่อ-สกุล <span class="text-red-500">*</span></label><input type="text" class="input-box-style" value="${data.invName||''}" required></div><div><label class="text-xs font-bold text-gray-500">แผนก <span class="text-red-500">*</span></label><input type="text" class="input-box-style" value="${data.invDept||''}" required></div><div><label class="text-xs font-bold text-gray-500">ตำแหน่ง <span class="text-red-500">*</span></label><input type="text" class="input-box-style" value="${data.invPosition||''}" required></div><div class="relative"><label class="text-xs font-bold text-gray-500">ลงชื่อ</label><input type="text" class="input-box-style pr-8 bg-gray-100 text-gray-400" value="${data.invSignature||''}" disabled placeholder="ลงชื่อในเอกสารจริง"><button type="button" class="remove-investigator-button absolute right-0 bottom-0 p-2 text-red-500 hover:text-red-700 font-bold">×</button></div>`;
+            
+            // Fix: Check for both CamelCase (frontend default) and PascalCase (likely from Database/Sheet)
+            const name = data.invName || data.InvName || '';
+            const dept = data.invDept || data.InvDept || '';
+            const pos = data.invPosition || data.InvPosition || '';
+            const sig = data.invSignature || data.InvSignature || '';
+
+            div.innerHTML = `<div class="md:col-span-2"><label class="text-xs font-bold text-gray-500">ชื่อ-สกุล <span class="text-red-500">*</span></label><input type="text" class="input-box-style" value="${name}" required></div><div><label class="text-xs font-bold text-gray-500">แผนก <span class="text-red-500">*</span></label><input type="text" class="input-box-style" value="${dept}" required></div><div><label class="text-xs font-bold text-gray-500">ตำแหน่ง <span class="text-red-500">*</span></label><input type="text" class="input-box-style" value="${pos}" required></div><div class="relative"><label class="text-xs font-bold text-gray-500">ลงชื่อ</label><input type="text" class="input-box-style pr-8 bg-gray-100 text-gray-400" value="${sig}" disabled placeholder="ลงชื่อในเอกสารจริง"><button type="button" class="remove-investigator-button absolute right-0 bottom-0 p-2 text-red-500 hover:text-red-700 font-bold">×</button></div>`;
             document.getElementById('investigators-container').appendChild(div);
             updateInvestigatorNumbers();
         }
