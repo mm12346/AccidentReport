@@ -717,6 +717,9 @@
                 <div class="p-4 border-b bg-gray-50 flex flex-col gap-2">
                     <div class="flex justify-between items-center mb-1">
                         <span class="font-bold text-gray-700">รายการ (<span id="all-reports-count">0</span>)</span>
+                        <button id="reload-reports-button" class="text-gray-500 hover:text-blue-600 p-1 rounded hover:bg-gray-200 transition-colors" title="รีโหลดข้อมูล">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        </button>
                     </div>
                     <select id="all-reports-branch-filter" class="input-box-style mb-2">
                         <option value="">-- ทุกสาขา --</option>
@@ -982,6 +985,7 @@
         const allReportsSearch = document.getElementById('all-reports-search');
         const allReportsBranchFilter = document.getElementById('all-reports-branch-filter');
         const allReportsCount = document.getElementById('all-reports-count');
+        const reloadReportsButton = document.getElementById('reload-reports-button'); // New Button
 
         let currentReportHTML = '';
         let currentViewingReportId = null;
@@ -1119,6 +1123,12 @@
         // Filter Logic for All Reports
         allReportsSearch?.addEventListener('keyup', filterAllReports);
         allReportsBranchFilter?.addEventListener('change', filterAllReports);
+        
+        // Reload Button Logic
+        reloadReportsButton?.addEventListener('click', () => {
+            allReportsData = []; // Clear cache
+            loadAllReportsList(true); // Force reload
+        });
 
         document.getElementById('all-reports-list-container')?.addEventListener('click', (e) => {
             const item = e.target.closest('.report-list-item');
@@ -1539,6 +1549,16 @@
                 if (input && input.type !== 'file' && !key.startsWith('victim')) { // Skip victim fields here
                     if (input.type === 'date' && data[key]) {
                         input.value = data[key].split(' ')[0];
+                    } else if (input.type === 'time' && data[key]) {
+                        // Fix for Time Input: Extract HH:mm
+                        let timeVal = data[key];
+                        // Try to find HH:mm pattern in the string (works for ISO strings and plain text)
+                        const match = typeof timeVal === 'string' ? timeVal.match(/(\d{2}:\d{2})/) : null;
+                        if (match) {
+                            input.value = match[0];
+                        } else {
+                            input.value = timeVal;
+                        }
                     } else {
                         if (key === 'accidentCategory') {
                             if (categoryOptions.includes(data[key])) {
@@ -2380,18 +2400,27 @@
             });
         }
         
-        async function loadAllReportsList() { 
-            if(allReportsData.length) {
-                // If data already exists, ensure initial render includes count and filter reset
+        async function loadAllReportsList(forceRefresh = false) { 
+            if(allReportsData.length && !forceRefresh) {
+                // If data already exists and not forcing refresh, ensure filter is applied
                 filterAllReports();
                 return;
             }
             
-            const res = await fetch(`${WEB_APP_URL}?action=getReports`); 
-            const json = await res.json(); 
-            if(json.status==='success') { 
-                allReportsData=json.data; 
-                filterAllReports(); // Use filter function for initial render
+            // UI Loading indicator
+            const container = document.getElementById('all-reports-list-container');
+            container.innerHTML = '<div class="flex justify-center p-8"><div class="loader h-8 w-8 rounded-full border-2 border-t-red-600"></div></div>';
+            
+            try {
+                const res = await fetch(`${WEB_APP_URL}?action=getReports`); 
+                const json = await res.json(); 
+                if(json.status==='success') { 
+                    allReportsData=json.data; 
+                    filterAllReports(); 
+                } 
+            } catch(e) { 
+                console.error(e);
+                container.innerHTML = '<div class="text-red-500 text-center p-4">โหลดข้อมูลไม่สำเร็จ</div>';
             } 
         }
 
