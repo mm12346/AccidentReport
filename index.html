@@ -721,10 +721,43 @@
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                         </button>
                     </div>
-                    <select id="all-reports-branch-filter" class="input-box-style mb-2">
+                    
+                    <!-- Branch Filter -->
+                    <select id="all-reports-branch-filter" class="input-box-style">
                         <option value="">-- ทุกสาขา --</option>
                     </select>
-                    <input type="text" id="all-reports-search" class="input-box-style" placeholder="🔍 ค้นหาตาม ID, วันที่...">
+                    
+                    <!-- Category Filter (NEW) -->
+                    <select id="all-reports-category-filter" class="input-box-style">
+                        <option value="">-- ทุกประเภทอุบัติเหตุ --</option>
+                        <option value="ทรัพย์สินเสียหาย">ทรัพย์สินเสียหาย</option>
+                        <option value="บาดเจ็บส่งรพ.">บาดเจ็บส่ง รพ.</option>
+                        <option value="ปฐมพยาบาล">ปฐมพยาบาล</option>
+                        <option value="อื่นๆ">อื่นๆ</option>
+                    </select>
+
+                    <!-- Month Filter (NEW - CHANGED TO SELECT) -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-sm font-bold text-gray-600 whitespace-nowrap">เดือนเกิดเหตุ:</label>
+                        <select id="all-reports-month-filter" class="input-box-style flex-grow">
+                            <option value="">-- ทุกเดือน --</option>
+                            <option value="01">มกราคม</option>
+                            <option value="02">กุมภาพันธ์</option>
+                            <option value="03">มีนาคม</option>
+                            <option value="04">เมษายน</option>
+                            <option value="05">พฤษภาคม</option>
+                            <option value="06">มิถุนายน</option>
+                            <option value="07">กรกฎาคม</option>
+                            <option value="08">สิงหาคม</option>
+                            <option value="09">กันยายน</option>
+                            <option value="10">ตุลาคม</option>
+                            <option value="11">พฤศจิกายน</option>
+                            <option value="12">ธันวาคม</option>
+                        </select>
+                    </div>
+
+                    <!-- Search Input -->
+                    <input type="text" id="all-reports-search" class="input-box-style mt-1" placeholder="🔍 ค้นหาตาม ID, สถานที่, ผู้กระทำ...">
                 </div>
                 <div id="all-reports-list-container" class="flex-grow overflow-y-auto p-2 space-y-2 bg-white"></div>
             </div>
@@ -984,6 +1017,8 @@
         // All Reports Filters (New)
         const allReportsSearch = document.getElementById('all-reports-search');
         const allReportsBranchFilter = document.getElementById('all-reports-branch-filter');
+        const allReportsCategoryFilter = document.getElementById('all-reports-category-filter'); // NEW
+        const allReportsMonthFilter = document.getElementById('all-reports-month-filter'); // NEW
         const allReportsCount = document.getElementById('all-reports-count');
         const reloadReportsButton = document.getElementById('reload-reports-button'); // New Button
 
@@ -1123,6 +1158,8 @@
         // Filter Logic for All Reports
         allReportsSearch?.addEventListener('keyup', filterAllReports);
         allReportsBranchFilter?.addEventListener('change', filterAllReports);
+        allReportsCategoryFilter?.addEventListener('change', filterAllReports); // NEW
+        allReportsMonthFilter?.addEventListener('change', filterAllReports); // NEW
         
         // Reload Button Logic
         reloadReportsButton?.addEventListener('click', () => {
@@ -2436,11 +2473,32 @@
         function filterAllReports() {
             const q = allReportsSearch.value.toLowerCase();
             const branch = allReportsBranchFilter.value;
+            const category = allReportsCategoryFilter.value; // NEW
+            const monthStr = allReportsMonthFilter.value; // NEW (Format: "01", "02", etc.)
             
             const filtered = allReportsData.filter(r => {
                 const matchesSearch = JSON.stringify(r).toLowerCase().includes(q);
                 const matchesBranch = branch === "" || r.branch === branch;
-                return matchesSearch && matchesBranch;
+                const matchesCategory = category === "" || r.accidentCategory === category; // NEW
+                
+                // NEW: Month Match Logic
+                let matchesMonth = true;
+                if (monthStr) {
+                    if (r.accDate) {
+                        // แยกส่วนของวันที่จากรูปแบบ "YYYY-MM-DD..." เพื่อเอาเฉพาะ "เดือน" ออกมาเทียบ
+                        const dateParts = r.accDate.split(' ')[0].split('-');
+                        if (dateParts.length >= 2) {
+                            const recordMonth = dateParts[1]; 
+                            matchesMonth = (recordMonth === monthStr);
+                        } else {
+                            matchesMonth = false;
+                        }
+                    } else {
+                        matchesMonth = false; // ข้ามรายการที่ไม่มีวันที่ถ้ามีการกรองด้วยเดือน
+                    }
+                }
+
+                return matchesSearch && matchesBranch && matchesCategory && matchesMonth;
             });
             
             renderAllReportsList(filtered);
@@ -2452,7 +2510,19 @@
             
             if(countSpan) countSpan.textContent = data.length;
 
-            c.innerHTML = data.map(r => `<div class="report-list-item p-3 bg-white border-b hover:bg-gray-50 cursor-pointer flex flex-col" data-id="${r.ReportID}"><div class="flex justify-between"><span class="font-bold text-red-700">${r.ReportID}</span><span class="text-gray-500 text-xs">${r.accDate?.split(' ')[0]}</span></div><span class="text-gray-800 text-sm">${r.branch}</span><span class="text-gray-500 text-xs truncate">${r.accLocation || '-'}</span></div>`).join(''); 
+            c.innerHTML = data.map((r, index) => `
+                <div class="report-list-item p-3 bg-white border-b hover:bg-gray-50 cursor-pointer flex flex-col" data-id="${r.ReportID}">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-gray-200 text-gray-700 text-[10px] font-bold px-1.5 py-0.5 rounded">${index + 1}</span>
+                            <span class="font-bold text-red-700">${r.ReportID}</span>
+                        </div>
+                        <span class="text-gray-500 text-xs whitespace-nowrap">${r.accDate?.split(' ')[0] || '-'}</span>
+                    </div>
+                    <span class="text-gray-800 text-sm ml-7">${r.branch}</span>
+                    <span class="text-gray-500 text-xs truncate ml-7">${r.accLocation || '-'}</span>
+                </div>
+            `).join(''); 
         }
         
         function handleReportSearch() { 
