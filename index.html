@@ -2514,7 +2514,7 @@
                 <div class="report-list-item p-3 bg-white border-b hover:bg-gray-50 cursor-pointer flex flex-col" data-id="${r.ReportID}">
                     <div class="flex justify-between items-start mb-1">
                         <div class="flex items-center gap-2">
-                            <span class="bg-gray-200 text-gray-700 text-[10px] font-bold px-1.5 py-0.5 rounded">${index + 1}</span>
+                            <span class="bg-gray-200 text-gray-700 text-[10px] font-bold px-1.5 py-0.5 rounded">${data.length - index}</span>
                             <span class="font-bold text-red-700">${r.ReportID}</span>
                         </div>
                         <span class="text-gray-500 text-xs whitespace-nowrap">${r.accDate?.split(' ')[0] || '-'}</span>
