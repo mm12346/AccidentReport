@@ -133,7 +133,7 @@
             header, #menu-sidebar, #draft-sidebar, #sidebar-backdrop, #add-investigator-button, #add-victim-button, 
             .remove-investigator-button, .remove-victim-button, #accident-form .text-center, #report-details-modal .flex.justify-between.items-center,
             #page-dashboard, #page-settings, #page-all-reports, #screen-only-header, #print-header, #success-modal,
-            #draft-modal, #delete-confirm-modal, #form-actions-container button:not(#submit-button), .no-print { display: none !important; }
+            #draft-modal, #delete-confirm-modal, #form-actions-container button:not(#submit-button), .no-print, .open-sig-btn { display: none !important; }
             #panel-actions-container, #modal-actions-container { display: none !important; }
             body.printing-modal > #page-home { display: none !important; }
             body.printing-modal > #report-details-modal {
@@ -293,6 +293,7 @@
                             <select id="accident-subcategory" name="accidentSubcategory" class="input-box-style w-48 bg-white hidden">
                                 <option value="">-- ประเภทย่อย --</option>
                                 <option value="ส่ง รพ.(พนักงานยื่นกท.)">ส่ง รพ.(พนักงานยื่นกท.)</option>
+                                <option value="ส่ง รพ.(พนักงานไม่ยื่นกท.)">ส่ง รพ.(พนักงานไม่ยื่นกท.)</option>
                                 <option value="ส่ง รพ.(ลูกค้า)">ส่ง รพ.(ลูกค้า)</option>
                                 <option value="ปฐมพยาบาลเบื้องต้น">ปฐมพยาบาลเบื้องต้น</option>
                             </select>
@@ -422,7 +423,7 @@
 
                 <!-- Add Victim Button -->
                 <button type="button" id="add-victim-button" class="mt-3 text-sm text-blue-700 hover:text-blue-900 font-medium flex items-center">
-                    <span class="mr-1 text-lg">+</span> เพิ่มผู้ได้รับผลกระทบ
+                    <span class="mr-1 text-lg">+</span> เพิ่มผู้ได้รับบาดเจ็บ
                 </button>
                 
                 <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -810,6 +811,23 @@
         </div>
     </div>
 
+    <!-- --- SIGNATURE MODAL --- -->
+    <div id="signature-modal" class="fixed inset-0 bg-black bg-opacity-60 z-[90] hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl p-4 w-[400px] max-w-[95vw] mx-2">
+            <h3 class="text-lg font-bold text-gray-900 mb-2">วาดลายเซ็น</h3>
+            <div class="border-2 border-dashed border-gray-300 bg-gray-50 rounded-lg mb-4 touch-none overflow-hidden cursor-crosshair">
+                <canvas id="signature-pad" height="150" class="w-full bg-transparent block"></canvas>
+            </div>
+            <div class="flex justify-between items-center">
+                <button type="button" id="clear-sig-btn" class="px-4 py-2 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition-colors">ล้าง</button>
+                <div class="space-x-2">
+                    <button type="button" id="cancel-sig-btn" class="px-4 py-2 bg-red-50 text-red-600 font-medium rounded-lg hover:bg-red-100 transition-colors">ยกเลิก</button>
+                    <button type="button" id="save-sig-btn" class="px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors">ยืนยัน</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- CONFIGURATION ---
         const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxUFt0EgK-3gGUBGZTRd0K6yhaI4b50ao5NLFRUOnrxiwg95fUj07_jBCsa_Fp9TzaX/exec";
@@ -970,6 +988,9 @@
         let categoryChartInstance = null;
         let topBranchChartInstance = null;
 
+        // Signature Pad Variables
+        let sigCanvas, sigCtx, drawing = false, currentSigRow = null;
+
         // --- INITIALIZATION ---
         document.getElementById('date-issued').valueAsDate = new Date();
         
@@ -981,6 +1002,96 @@
         loadAccidentTypes(); 
         addInvestigator();
         addVictim(); 
+        initSignaturePad();
+
+        // --- SIGNATURE PAD LOGIC ---
+        function initSignaturePad() {
+            sigCanvas = document.getElementById('signature-pad');
+            if(!sigCanvas) return;
+            sigCtx = sigCanvas.getContext('2d');
+            
+            const startPos = (e) => {
+                e.preventDefault();
+                drawing = true;
+                const rect = sigCanvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                sigCtx.beginPath();
+                sigCtx.moveTo(clientX - rect.left, clientY - rect.top);
+            };
+            
+            const draw = (e) => {
+                if (!drawing) return;
+                e.preventDefault();
+                const rect = sigCanvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                sigCtx.lineTo(clientX - rect.left, clientY - rect.top);
+                sigCtx.stroke();
+            };
+            
+            const endPos = () => drawing = false;
+
+            sigCanvas.addEventListener('mousedown', startPos);
+            sigCanvas.addEventListener('mousemove', draw);
+            sigCanvas.addEventListener('mouseup', endPos);
+            sigCanvas.addEventListener('mouseout', endPos);
+            
+            sigCanvas.addEventListener('touchstart', startPos, {passive: false});
+            sigCanvas.addEventListener('touchmove', draw, {passive: false});
+            sigCanvas.addEventListener('touchend', endPos);
+            
+            document.getElementById('clear-sig-btn').addEventListener('click', () => {
+                sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+            });
+            
+            document.getElementById('cancel-sig-btn').addEventListener('click', () => {
+                document.getElementById('signature-modal').classList.add('hidden');
+                currentSigRow = null;
+            });
+            
+            document.getElementById('save-sig-btn').addEventListener('click', () => {
+                if (currentSigRow) {
+                    // Create white background
+                    const tempCanvas = document.createElement('canvas');
+                    tempCanvas.width = sigCanvas.width;
+                    tempCanvas.height = sigCanvas.height;
+                    const tCtx = tempCanvas.getContext('2d');
+                    tCtx.fillStyle = '#ffffff';
+                    tCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+                    tCtx.drawImage(sigCanvas, 0, 0);
+                    
+                    const dataUrl = tempCanvas.toDataURL('image/jpeg', 0.5);
+                    
+                    const input = currentSigRow.querySelector('.inv-sig-input');
+                    const img = currentSigRow.querySelector('.inv-sig-img');
+                    const hidden = currentSigRow.querySelector('.inv-sig-hidden');
+                    
+                    input.classList.add('hidden');
+                    img.src = dataUrl;
+                    img.classList.remove('hidden');
+                    hidden.value = dataUrl;
+                }
+                document.getElementById('signature-modal').classList.add('hidden');
+                currentSigRow = null;
+            });
+        }
+
+        function openSignaturePad(row) {
+            currentSigRow = row;
+            const modal = document.getElementById('signature-modal');
+            modal.classList.remove('hidden');
+            
+            // Resize canvas to match display size for perfect coordinates
+            const rect = sigCanvas.parentElement.getBoundingClientRect();
+            sigCanvas.width = rect.width;
+            
+            sigCtx.clearRect(0, 0, sigCanvas.width, sigCanvas.height);
+            sigCtx.lineWidth = 2;
+            sigCtx.lineCap = 'round';
+            sigCtx.strokeStyle = '#000';
+        }
+
 
         // --- EVENT LISTENERS ---
         document.getElementById('open-menu-sidebar-button')?.addEventListener('click', () => toggleSidebar(menuSidebar, true));
@@ -1093,8 +1204,25 @@
         accImageInput.addEventListener('change', handleImagePreview);
 
         document.getElementById('add-investigator-button').addEventListener('click', () => addInvestigator());
+        
+        // Investigator Row Event Delegation (Includes Signature Pad trigger)
         document.getElementById('investigators-container').addEventListener('click', (e) => {
-            if (e.target.closest('.remove-investigator-button')) { e.target.closest('.investigator-row').remove(); updateInvestigatorNumbers(); }
+            if (e.target.closest('.remove-investigator-button')) { 
+                e.target.closest('.investigator-row').remove(); 
+                updateInvestigatorNumbers(); 
+            }
+            if (e.target.closest('.open-sig-btn')) {
+                openSignaturePad(e.target.closest('.investigator-row'));
+            }
+            if (e.target.closest('.inv-sig-img')) {
+                // Reset Signature Image
+                const row = e.target.closest('.investigator-row');
+                row.querySelector('.inv-sig-img').classList.add('hidden');
+                row.querySelector('.inv-sig-img').src = '';
+                row.querySelector('.inv-sig-input').classList.remove('hidden');
+                row.querySelector('.inv-sig-hidden').value = '';
+                row.querySelector('.inv-sig-input').value = '';
+            }
         });
 
         draftListContainer.addEventListener('click', (e) => {
@@ -1243,7 +1371,7 @@
 
             div.innerHTML = `
                 <div class="flex justify-between items-center mb-4 border-b pb-2">
-                    <h3 class="font-bold text-gray-700">ผู้ได้รับผลกระทบที่ <span class="victim-number">${victimsContainer.children.length + 1}</span></h3>
+                    <h3 class="font-bold text-gray-700">ผู้ได้รับบาดเจ็บที่ <span class="victim-number">${victimsContainer.children.length + 1}</span></h3>
                     <button type="button" class="remove-victim-button text-red-500 hover:text-red-700 font-bold px-2 py-1 rounded hover:bg-red-50" ${victimsContainer.children.length === 0 ? 'style="display:none"' : ''}>
                         ลบ
                     </button>
@@ -1288,9 +1416,7 @@
                         <select class="input-box-style bg-white victim-treatment" required>
                             <option value="">-- เลือก --</option>
                             <option value="ปฐมพยาบาลเบื้องต้น" ${data.victimTreatment === 'ปฐมพยาบาลเบื้องต้น' ? 'selected' : ''}>ปฐมพยาบาลเบื้องต้น</option>
-                            <option value="ส่ง รพ.กลับมาทำงาน" ${data.victimTreatment === 'ส่ง รพ.กลับมาทำงาน' ? 'selected' : ''}>ส่ง รพ.กลับมาทำงาน</option>
-                            <option value="ส่ง รพ.กลับบ้าน" ${data.victimTreatment === 'ส่ง รพ.กลับบ้าน' ? 'selected' : ''}>ส่ง รพ.กลับบ้าน</option>
-                            <option value="ส่ง รพ.รักษาตัว" ${data.victimTreatment === 'ส่ง รพ.รักษาตัว' ? 'selected' : ''}>ส่ง รพ.รักษาตัว</option>
+                            <option value="ส่งต่อ รพ." ${data.victimTreatment === 'ส่งต่อ รพ.' ? 'selected' : ''}>ส่งต่อ รพ.</option>
                             <option value="ทรัพย์สินเสียหาย" ${data.victimTreatment === 'ทรัพย์สินเสียหาย' ? 'selected' : ''}>ทรัพย์สินเสียหาย</option>
                         </select>
                     </div>
@@ -1398,9 +1524,17 @@
             formData.forEach((v, k) => { if (!k.startsWith('inv') && k !== 'accImage') obj[k] = v; });
             
             document.querySelectorAll('.investigator-row').forEach(row => {
-                const inputs = row.querySelectorAll('input');
-                const inv = { invName: inputs[0].value, invDept: inputs[1].value, invPosition: inputs[2].value, invSignature: inputs[3].value };
-                if (inv.invName) obj.investigators.push(inv);
+                const name = row.querySelector('.inv-name').value;
+                const dept = row.querySelector('.inv-dept').value;
+                const pos = row.querySelector('.inv-pos').value;
+                
+                let sig = row.querySelector('.inv-sig-hidden').value;
+                const isImgHidden = row.querySelector('.inv-sig-img').classList.contains('hidden');
+                if (isImgHidden) {
+                    sig = row.querySelector('.inv-sig-input').value;
+                }
+
+                if (name) obj.investigators.push({ invName: name, invDept: dept, invPosition: pos, invSignature: sig });
             });
 
             const victimCards = victimsContainer.querySelectorAll('.victim-card');
@@ -1536,7 +1670,7 @@
             formTitle.textContent = `แก้ไขรายงาน #${editReportIdInput.value}`;
             formTitle.classList.add('text-red-600');
 
-            const categoryOptions = ['ทรัพย์สินเสียหาย', 'อุบัติเหตุนอกงาน', 'อุบัติเหตุในงาน', 'อื่นๆ'];
+            const categoryOptions = Array.from(accidentCategorySelect.options).map(o => o.value);
             const accTypeOptions = Array.from(accTypeSelect.options).map(o => o.value);
 
             const keys = Object.keys(data);
@@ -2019,11 +2153,16 @@
                                     ${Array.isArray(inv) && inv.length > 0 ? 
                                         inv.map((i, idx) => `
                                             <tr class="border-b border-gray-200">
-                                                <td class="p-2 text-center">${idx+1}</td>
-                                                <td class="p-2 font-medium">${i.invName || i.InvName || '-'}</td>
-                                                <td class="p-2">${i.invDept || '-'}</td>
-                                                <td class="p-2">${i.invPosition || i.InvPosition || '-'}</td>
-                                                <td class="p-2 text-right italic text-gray-400">...................................</td>
+                                                <td class="p-2 text-center align-middle">${idx+1}</td>
+                                                <td class="p-2 font-medium align-middle">${i.invName || i.InvName || '-'}</td>
+                                                <td class="p-2 align-middle">${i.invDept || '-'}</td>
+                                                <td class="p-2 align-middle">${i.invPosition || i.InvPosition || '-'}</td>
+                                                <td class="p-2 text-right align-middle">
+                                                    ${(i.invSignature || i.InvSignature || '').startsWith('data:image') 
+                                                        ? `<img src="${i.invSignature || i.InvSignature}" class="h-8 inline-block object-contain">`
+                                                        : `<span class="italic text-gray-700">${i.invSignature || i.InvSignature || '...................................'}</span>`
+                                                    }
+                                                </td>
                                             </tr>
                                         `).join('') : '<tr><td colspan="5" class="p-4 text-center italic text-gray-400">ไม่มีรายชื่อผู้เข้าร่วม</td></tr>'}
                                 </tbody>
@@ -2039,14 +2178,29 @@
         function addInvestigator(data = {}) {
             investigatorCount++;
             const div = document.createElement('div');
-            div.className = 'investigator-row grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 items-end p-2 border-b bg-gray-50 rounded';
+            div.className = 'investigator-row grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2 items-start p-2 border-b bg-gray-50 rounded relative';
             
             const name = data.invName || data.InvName || '';
             const dept = data.invDept || data.InvDept || '';
             const pos = data.invPosition || data.InvPosition || '';
             const sig = data.invSignature || data.InvSignature || '';
+            const isImg = sig.startsWith('data:image');
 
-            div.innerHTML = `<div class="md:col-span-2"><label class="text-xs font-bold text-gray-500">ชื่อ-สกุล <span class="text-red-500">*</span></label><input type="text" class="input-box-style" value="${name}" required></div><div><label class="text-xs font-bold text-gray-500">แผนก <span class="text-red-500">*</span></label><input type="text" class="input-box-style" value="${dept}" required></div><div><label class="text-xs font-bold text-gray-500">ตำแหน่ง <span class="text-red-500">*</span></label><input type="text" class="input-box-style" value="${pos}" required></div><div class="relative"><label class="text-xs font-bold text-gray-500">ลงชื่อ</label><input type="text" class="input-box-style pr-8 bg-gray-100 text-gray-400" value="${sig}" disabled placeholder="ลงชื่อในเอกสารจริง"><button type="button" class="remove-investigator-button absolute right-0 bottom-0 p-2 text-red-500 hover:text-red-700 font-bold">×</button></div>`;
+            div.innerHTML = `
+                <div class="md:col-span-2"><label class="text-xs font-bold text-gray-500">ชื่อ-สกุล <span class="text-red-500">*</span></label><input type="text" class="input-box-style inv-name" value="${name}" required></div>
+                <div><label class="text-xs font-bold text-gray-500">แผนก <span class="text-red-500">*</span></label><input type="text" class="input-box-style inv-dept" value="${dept}" required></div>
+                <div><label class="text-xs font-bold text-gray-500">ตำแหน่ง <span class="text-red-500">*</span></label><input type="text" class="input-box-style inv-pos" value="${pos}" required></div>
+                <div class="relative flex flex-col gap-1 pr-6">
+                    <label class="text-xs font-bold text-gray-500">ลงชื่อ (พิมพ์/วาด)</label>
+                    <div class="flex items-center gap-1">
+                        <input type="text" class="input-box-style inv-sig-input ${isImg ? 'hidden' : ''}" value="${isImg ? '' : sig}" placeholder="พิมพ์ชื่อ...">
+                        <img src="${isImg ? sig : ''}" class="inv-sig-img h-10 w-full object-contain border bg-white rounded cursor-pointer ${isImg ? '' : 'hidden'}" title="คลิกเพื่อลบ/พิมพ์ใหม่">
+                        <button type="button" class="p-2 bg-gray-200 rounded hover:bg-gray-300 open-sig-btn flex-shrink-0 h-[2.5rem]" title="วาดลายเซ็น">✍️</button>
+                    </div>
+                    <input type="hidden" class="inv-sig-hidden" value="${isImg ? sig : ''}">
+                </div>
+                <button type="button" class="remove-investigator-button absolute right-1 top-2 p-1 text-red-500 hover:text-red-700 font-bold text-lg leading-none">×</button>
+            `;
             document.getElementById('investigators-container').appendChild(div);
             updateInvestigatorNumbers();
         }
@@ -2127,7 +2281,7 @@
             const d = getAllDrafts().find(x => x.id === id); if(!d) return; 
             clearForm(true); 
             
-            const categoryOptions = ['ทรัพย์สินเสียหาย', 'อุบัติเหตุนอกงาน', 'อุบัติเหตุในงาน', 'อื่นๆ'];
+            const categoryOptions = Array.from(accidentCategorySelect.options).map(o => o.value);
             const accTypeOptions = Array.from(accTypeSelect.options).map(o => o.value);
 
             Object.keys(d.data).forEach(k => { 
