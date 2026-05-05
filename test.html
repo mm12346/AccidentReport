@@ -119,6 +119,60 @@
             border-left: 4px solid #b91c1c;
         }
 
+        /* Custom Multi-Select Styles for Dashboard */
+        .multi-select-container {
+            position: relative;
+            user-select: none;
+        }
+        .multi-select-btn {
+            background-color: #fff;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.375rem;
+            padding: 0.5rem;
+            min-height: 2.5rem;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .multi-select-btn:focus {
+            border-color: #ef4444;
+            outline: none;
+        }
+        .multi-select-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 50;
+            display: none;
+        }
+        .multi-select-dropdown.show {
+            display: block;
+        }
+        .multi-select-option {
+            padding: 0.5rem;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .multi-select-option:hover {
+            background-color: #f9fafb;
+        }
+        .multi-select-option input {
+            margin-right: 0.5rem;
+            cursor: pointer;
+        }
+
         /* --- PRINT STYLES --- */
         @media print {
             @page { size: A4; margin: 10mm 15mm; }
@@ -295,6 +349,8 @@
                                 <option value="ส่ง รพ.(พนักงานยื่นกท.)">ส่ง รพ.(พนักงานยื่นกท.)</option>
                                 <option value="ส่ง รพ.(พนักงานไม่ยื่นกท.)">ส่ง รพ.(พนักงานไม่ยื่นกท.)</option>
                                 <option value="ส่ง รพ.(ลูกค้า)">ส่ง รพ.(ลูกค้า)</option>
+                                <option value="ส่ง รพ.(ผู้รับเหมา)">ส่ง รพ.(ผู้รับเหมา)</option>
+                                <option value="ส่ง รพ.(PC)">ส่ง รพ.(PC)</option>
                                 <option value="ปฐมพยาบาลเบื้องต้น">ปฐมพยาบาลเบื้องต้น</option>
                             </select>
                             <input type="text" id="accident-category-other" class="input-box-style w-48 hidden" placeholder="ระบุประเภทอุบัติเหตุ">
@@ -309,6 +365,7 @@
                             <option value="PC">PC</option>
                             <option value="ผู้รับเหมา">ผู้รับเหมา</option>
                             <option value="ลูกค้า">ลูกค้า</option>
+                            <option value="บุคคลอื่นที่สัญจร">บุคคลอื่นที่สัญจร</option>
                             <option value="ทรัพย์สินเสียหาย">ทรัพย์สินเสียหาย</option>
                         </select>
                     </div>
@@ -428,7 +485,7 @@
                 
                 <div class="mt-4 pt-4 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label for="damage-cost" class="label-style">มูลค่าความเสียหาย (บาท) <span class="text-red-500">*</span></label>
+                        <label for="damage-cost" class="label-style">มูลค่าความเสียหาย (บาท) <span id="damage-cost-asterisk" class="text-red-500">*</span></label>
                         <input type="number" step="0.01" id="damage-cost" name="damageCost" class="input-box-style" required>
                     </div>
                     <div class="sm:col-span-2">
@@ -484,8 +541,8 @@
                     </div>
 
                     <div>
-                        <label for="opinion-safety" class="label-style">ความเห็น จป./Loss Prevention <span class="text-red-500">*</span></label>
-                        <input type="text" id="opinion-safety" name="opinionSafety" class="input-box-style" required>
+                        <label for="opinion-safety" class="label-style">ความเห็น จป./Loss Prevention</label>
+                        <input type="text" id="opinion-safety" name="opinionSafety" class="input-box-style">
                     </div>
                     <div>
                         <label for="penalty" class="label-style">บทลงโทษ (ถ้ามี)</label>
@@ -534,99 +591,193 @@
     <div id="page-dashboard" class="page-content max-w-7xl mx-auto bg-white p-6 sm:p-8 rounded-lg shadow-lg hidden border border-gray-200">
         <h1 class="text-2xl font-bold text-red-700 mb-6 text-center">แดชบอร์ดสรุปรายงาน</h1>
         
-        <!-- DASHBOARD FILTERS -->
-        <div class="flex flex-wrap justify-center items-center mb-8 gap-4 bg-gray-50 p-4 rounded-lg border">
+        <!-- DASHBOARD FILTERS (NEW MULTI-SELECT) -->
+        <div class="flex flex-wrap items-end mb-8 gap-4 bg-gray-50 p-4 rounded-lg border">
+            
+            <!-- Date Range Filter -->
+            <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full md:w-auto">
+                <div class="flex flex-col">
+                    <label class="font-bold text-gray-700 text-sm mb-1">วันที่เริ่ม:</label>
+                    <input type="date" id="dashboard-date-start" class="input-box-style w-full sm:w-36 border-2 border-gray-200 focus:border-red-500 rounded-md">
+                </div>
+                <span class="text-gray-500 font-bold self-end mb-2 hidden sm:inline">-</span>
+                <div class="flex flex-col">
+                    <label class="font-bold text-gray-700 text-sm mb-1">ถึงวันที่:</label>
+                    <input type="date" id="dashboard-date-end" class="input-box-style w-full sm:w-36 border-2 border-gray-200 focus:border-red-500 rounded-md">
+                </div>
+            </div>
+
             <!-- Branch Filter -->
-            <div class="flex items-center gap-2">
-                <label for="dashboard-branch-filter" class="font-bold text-gray-700 whitespace-nowrap">สาขา:</label>
-                <select id="dashboard-branch-filter" class="input-box-style w-48 bg-white border-2 border-gray-200 focus:border-red-500 rounded-md">
-                    <option value="">-- ทั้งหมดทุกสาขา --</option>
-                </select>
+            <div class="w-full md:w-48 flex flex-col">
+                <label class="font-bold text-gray-700 text-sm mb-1">สาขา:</label>
+                <div class="multi-select-container" id="filter-branch">
+                    <button class="multi-select-btn"><span class="truncate">ทั้งหมด</span><span> </span></button>
+                    <div class="multi-select-dropdown">
+                        <label class="multi-select-option font-bold bg-gray-100 sticky top-0"><input type="checkbox" value="all" checked> เลือกทั้งหมด</label>
+                        <div class="options-container"></div>
+                    </div>
+                </div>
             </div>
             
             <!-- Category Filter -->
-            <div class="flex items-center gap-2">
-                <label for="dashboard-category-filter" class="font-bold text-gray-700 whitespace-nowrap">ประเภท:</label>
-                <select id="dashboard-category-filter" class="input-box-style w-48 bg-white border-2 border-gray-200 focus:border-red-500 rounded-md">
-                    <option value="">-- ทั้งหมด --</option>
-                    <option value="ทรัพย์สินเสียหาย">ทรัพย์สินเสียหาย</option>
-                    <option value="อุบัติเหตุนอกงาน">อุบัติเหตุนอกงาน</option>
-                    <option value="อุบัติเหตุในงาน">อุบัติเหตุในงาน</option>
-                    <option value="อื่นๆ">อื่นๆ</option>
-                </select>
+            <div class="w-full md:w-48 flex flex-col">
+                <label class="font-bold text-gray-700 text-sm mb-1">ประเภทอุบัติเหตุ:</label>
+                <div class="multi-select-container" id="filter-category">
+                    <button class="multi-select-btn"><span class="truncate">ทั้งหมด</span><span> </span></button>
+                    <div class="multi-select-dropdown">
+                        <label class="multi-select-option font-bold bg-gray-100 sticky top-0"><input type="checkbox" value="all" checked> เลือกทั้งหมด</label>
+                        <div class="options-container">
+                            <label class="multi-select-option"><input type="checkbox" value="ทรัพย์สินเสียหาย" checked> ทรัพย์สินเสียหาย</label>
+                            <label class="multi-select-option"><input type="checkbox" value="อุบัติเหตุนอกงาน" checked> อุบัติเหตุนอกงาน</label>
+                            <label class="multi-select-option"><input type="checkbox" value="อุบัติเหตุในงาน" checked> อุบัติเหตุในงาน</label>
+                            <label class="multi-select-option"><input type="checkbox" value="อื่นๆ" checked> อื่นๆ</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Affected Person Filter -->
+            <div class="w-full md:w-48 flex flex-col">
+                <label class="font-bold text-gray-700 text-sm mb-1">ผู้ได้รับผลกระทบ:</label>
+                <div class="multi-select-container" id="filter-person">
+                    <button class="multi-select-btn"><span class="truncate">ทั้งหมด</span><span> </span></button>
+                    <div class="multi-select-dropdown">
+                        <label class="multi-select-option font-bold bg-gray-100 sticky top-0"><input type="checkbox" value="all" checked> เลือกทั้งหมด</label>
+                        <div class="options-container">
+                            <label class="multi-select-option"><input type="checkbox" value="พนักงาน(ไทย)" checked> พนักงาน(ไทย)</label>
+                            <label class="multi-select-option"><input type="checkbox" value="พนักงาน(พม่า)" checked> พนักงาน(พม่า)</label>
+                            <label class="multi-select-option"><input type="checkbox" value="PC" checked> PC</label>
+                            <label class="multi-select-option"><input type="checkbox" value="ผู้รับเหมา" checked> ผู้รับเหมา</label>
+                            <label class="multi-select-option"><input type="checkbox" value="ลูกค้า" checked> ลูกค้า</label>
+                            <label class="multi-select-option"><input type="checkbox" value="บุคคลอื่นที่สัญจร" checked> บุคคลอื่นที่สัญจร</label>
+                            <label class="multi-select-option"><input type="checkbox" value="ทรัพย์สินเสียหาย" checked> ทรัพย์สินเสียหาย</label>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Work Shift Filter -->
-            <div class="flex items-center gap-2">
-                <label for="dashboard-shift-filter" class="font-bold text-gray-700 whitespace-nowrap">ช่วงเวลา:</label>
-                <select id="dashboard-shift-filter" class="input-box-style w-36 bg-white border-2 border-gray-200 focus:border-red-500 rounded-md">
-                    <option value="">-- ทั้งหมด --</option>
-                    <option value="ในเวลางาน">ในเวลางาน</option>
-                    <option value="นอกเวลางาน">นอกเวลางาน</option>
-                </select>
-            </div>
-
-            <!-- Date Range Filter -->
-            <div class="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                <label class="font-bold text-gray-700 whitespace-nowrap">วันที่:</label>
-                <input type="date" id="dashboard-date-start" class="input-box-style w-36 border-2 border-gray-200 focus:border-red-500 rounded-md">
-                <span class="text-gray-500 font-bold">-</span>
-                <input type="date" id="dashboard-date-end" class="input-box-style w-36 border-2 border-gray-200 focus:border-red-500 rounded-md">
+            <div class="w-full md:w-40 flex flex-col">
+                <label class="font-bold text-gray-700 text-sm mb-1">ช่วงเวลา:</label>
+                <div class="multi-select-container" id="filter-shift">
+                    <button class="multi-select-btn"><span class="truncate">ทั้งหมด</span><span> </span></button>
+                    <div class="multi-select-dropdown">
+                        <label class="multi-select-option font-bold bg-gray-100 sticky top-0"><input type="checkbox" value="all" checked> เลือกทั้งหมด</label>
+                        <div class="options-container">
+                            <label class="multi-select-option"><input type="checkbox" value="ในเวลางาน" checked> ในเวลางาน</label>
+                            <label class="multi-select-option"><input type="checkbox" value="นอกเวลางาน" checked> นอกเวลางาน</label>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Clear Filters Button -->
-            <button id="dashboard-clear-filters" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-sm text-gray-700 font-semibold transition-colors flex items-center">
+            <button id="dashboard-clear-filters" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md text-sm text-gray-700 font-semibold transition-colors flex items-center h-10 w-full md:w-auto justify-center mt-2 md:mt-0">
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 ล้างตัวกรอง
             </button>
         </div>
         
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 max-w-6xl mx-auto">
-            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-red-500 flex flex-col items-center justify-center transition-transform hover:scale-105">
-                <div class="text-gray-500 text-sm font-semibold">รายงานอุบัติเหตุ</div>
-                <div class="text-3xl font-bold text-gray-800 mt-2" id="stat-total-reports">0</div>
-                <div class="text-xs text-gray-400 mt-1">รายการ</div>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-blue-500 flex flex-col items-center justify-center transition-transform hover:scale-105">
-                <div class="text-gray-500 text-sm font-semibold">มูลค่าความเสียหาย</div>
-                <div class="text-3xl font-bold text-gray-800 mt-2" id="stat-total-cost">0.00</div>
-                <div class="text-xs text-gray-400 mt-1">บาท</div>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-yellow-500 flex flex-col items-center justify-center transition-transform hover:scale-105">
-                <div class="text-gray-500 text-sm font-semibold">รวมวันหยุดงาน</div>
-                <div class="text-3xl font-bold text-gray-800 mt-2" id="stat-total-days-lost">0</div>
-                <div class="text-xs text-gray-400 mt-1">วัน</div>
-            </div>
-            <div class="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500 flex flex-col items-center justify-center transition-transform hover:scale-105">
-                <div class="text-gray-500 text-sm font-semibold">สาขาที่หยุดงานสูงสุด</div>
-                <div class="text-xl font-bold text-gray-800 mt-2 text-center break-words w-full px-2" id="stat-max-branch-days">N/A</div>
-                <div class="text-xs text-gray-400 mt-1" id="stat-max-branch-days-val">0 วัน</div>
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div class="bg-gray-50 p-4 rounded-lg border shadow-sm">
-                <h2 class="text-lg font-semibold text-center mb-4 text-gray-700">สรุปตามสาขา</h2>
-                <canvas id="branchChart"></canvas>
-            </div>
-            <div class="bg-gray-50 p-4 rounded-lg border shadow-sm">
-                <h2 class="text-lg font-semibold text-center mb-4 text-gray-700">สรุปตามเดือน (รายปี)</h2>
-                <canvas id="monthChart"></canvas>
-            </div>
-            <div class="bg-gray-50 p-4 rounded-lg border shadow-sm">
-                <h2 class="text-lg font-semibold text-center mb-4 text-gray-700">สัดส่วนประเภทอุบัติเหตุ</h2>
-                <div class="h-64 flex justify-center">
-                    <canvas id="categoryChart"></canvas>
+        <!-- SUMMARY CARDS & TOP 3 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 max-w-full mx-auto">
+            <!-- Totals -->
+            <div class="space-y-4">
+                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-red-500 transition-transform hover:scale-105 cursor-pointer flex flex-col justify-between h-[140px]" onclick="goToAllReports('all')" title="คลิกเพื่อดูรายงานทั้งหมด">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <div class="text-gray-500 text-sm font-semibold">รายงานอุบัติเหตุทั้งหมด (คลิกดู)</div>
+                            <div class="text-3xl font-bold text-gray-800 mt-1" id="stat-total-reports">0</div>
+                        </div>
+                        <div class="text-red-500 bg-red-50 p-2 rounded-full">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-xs border-t pt-2 mt-auto">
+                        <div class="flex justify-between p-1 hover:bg-gray-100 rounded text-gray-600" onclick="event.stopPropagation(); goToAllReports('ทรัพย์สินเสียหาย')" title="คลิกดูรายงานทรัพย์สินเสียหาย">
+                            <span>ทรัพย์สินเสียหาย:</span><span id="stat-cat-prop" class="font-bold text-gray-800">0</span>
+                        </div>
+                        <div class="flex justify-between p-1 hover:bg-gray-100 rounded text-gray-600" onclick="event.stopPropagation(); goToAllReports('อุบัติเหตุในงาน')" title="คลิกดูรายงานอุบัติเหตุในงาน">
+                            <span>ในงาน:</span><span id="stat-cat-on" class="font-bold text-gray-800">0</span>
+                        </div>
+                        <div class="flex justify-between p-1 hover:bg-gray-100 rounded text-gray-600" onclick="event.stopPropagation(); goToAllReports('อุบัติเหตุนอกงาน')" title="คลิกดูรายงานอุบัติเหตุนอกงาน">
+                            <span>นอกงาน:</span><span id="stat-cat-off" class="font-bold text-gray-800">0</span>
+                        </div>
+                        <div class="flex justify-between p-1 hover:bg-gray-100 rounded text-gray-600" onclick="event.stopPropagation(); goToAllReports('อื่นๆ')" title="คลิกดูรายงานอื่นๆ">
+                            <span>อื่นๆ:</span><span id="stat-cat-other" class="font-bold text-gray-800">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500 flex justify-between items-center transition-transform hover:scale-105">
+                    <div>
+                        <div class="text-gray-500 text-sm font-semibold">มูลค่าความเสียหายรวม</div>
+                        <div class="text-2xl font-bold text-gray-800 mt-1" id="stat-total-cost">0.00</div>
+                    </div>
+                    <div class="text-blue-500 bg-blue-50 p-3 rounded-full text-lg font-bold">฿</div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500 flex justify-between items-center transition-transform hover:scale-105">
+                    <div>
+                        <div class="text-gray-500 text-sm font-semibold">วันหยุดงานรวม</div>
+                        <div class="text-3xl font-bold text-gray-800 mt-1" id="stat-total-days-lost">0</div>
+                    </div>
+                    <div class="text-yellow-500 bg-yellow-50 p-3 rounded-full">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
                 </div>
             </div>
-            <div class="bg-gray-50 p-4 rounded-lg border shadow-sm">
-                <h2 class="text-lg font-semibold text-center mb-4 text-gray-700">สาขาที่เกิดอุบัติเหตุสูงสุด (Top 5)</h2>
-                <canvas id="topBranchChart"></canvas>
+
+            <!-- Top 3 Branch Occurrences -->
+            <div class="bg-white p-5 rounded-lg shadow border-t-4 border-red-500 flex flex-col">
+                <h3 class="text-lg font-bold text-gray-800 mb-3 flex items-center border-b pb-2">
+                    <svg class="w-5 h-5 mr-2 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                    Top 3 สาขาเกิดอุบัติเหตุสูงสุด
+                </h3>
+                <div id="top-branches-accidents" class="flex-grow flex flex-col justify-center space-y-3">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+
+            <!-- Top 3 Branches by Impact (Days & Cost) -->
+            <div class="space-y-4 flex flex-col">
+                <div class="bg-white p-4 rounded-lg shadow border-t-4 border-yellow-500 flex-1">
+                    <h3 class="text-sm font-bold text-gray-800 mb-2 border-b pb-1">Top 3 สาขาหยุดงานสูงสุด (วัน)</h3>
+                    <div id="top-branches-days" class="space-y-2 text-sm"></div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow border-t-4 border-blue-500 flex-1">
+                    <h3 class="text-sm font-bold text-gray-800 mb-2 border-b pb-1">Top 3 สาขามูลค่าเสียหายสูงสุด (บาท)</h3>
+                    <div id="top-branches-cost" class="space-y-2 text-sm"></div>
+                </div>
             </div>
         </div>
 
-        <h2 class="text-lg font-semibold mb-4 border-b pb-2">รายการล่าสุด</h2>
-        <div id="dashboard-content" class="overflow-x-auto"></div>
+        <!-- CHARTS SECTION -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-white p-4 rounded-lg border shadow-sm col-span-1 md:col-span-2">
+                <h2 class="text-lg font-semibold text-center mb-4 text-gray-700">สรุปจำนวนรายงานและจำนวนสาขาในแต่ละเดือน</h2>
+                <div class="h-80 relative w-full"><canvas id="monthSummaryChart"></canvas></div>
+            </div>
+            
+            <div class="bg-white p-4 rounded-lg border shadow-sm col-span-1 md:col-span-2">
+                <h2 class="text-lg font-semibold text-center mb-4 text-gray-700">สรุปรายงานของแต่ละสาขา</h2>
+                <div class="h-80 relative w-full flex justify-center">
+                    <canvas id="branchChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-lg border shadow-sm">
+                <h2 class="text-lg font-semibold text-center mb-4 text-gray-700">สัดส่วนประเภทอุบัติเหตุรายเดือน</h2>
+                <div class="h-64 relative w-full"><canvas id="categoryChart"></canvas></div>
+            </div>
+
+            <div class="bg-white p-4 rounded-lg border shadow-sm">
+                <h2 class="text-lg font-semibold text-center mb-4 text-gray-700">สัดส่วนผู้ได้รับผลกระทบรายเดือน</h2>
+                <div class="h-64 relative w-full"><canvas id="personChart"></canvas></div>
+            </div>
+
+            <div class="bg-white p-4 rounded-lg border shadow-sm">
+                <h2 class="text-lg font-semibold text-center mb-4 text-gray-700">สัดส่วนช่วงเวลาเกิดเหตุรายเดือน</h2>
+                <div class="h-64 relative w-full"><canvas id="shiftChart"></canvas></div>
+            </div>
+        </div>
     </div>
 
     <!-- --- SETTINGS --- -->
@@ -690,15 +841,21 @@
                         </select>
                     </div>
 
-                    <!-- Search Input -->
-                    <input type="text" id="all-reports-search" class="input-box-style mt-1" placeholder="🔍 ค้นหาตาม ID, สถานที่, ผู้กระทำ...">
+                    <!-- Search Input (Fixed Icon) -->
+                    <div class="relative mt-1">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <input type="text" id="all-reports-search" class="input-box-style pl-10 w-full" placeholder="ค้นหาตาม ID, สถานที่, ผู้กระทำ...">
+                    </div>
                 </div>
                 <div id="all-reports-list-container" class="flex-grow overflow-y-auto p-2 space-y-2 bg-white"></div>
             </div>
             <div id="report-details-panel" class="hidden lg:flex w-full lg:w-[65%] flex-col bg-white relative">
                 <div class="p-3 border-b bg-gray-50 flex justify-between items-center">
                     <h2 class="font-bold text-gray-700 flex items-center">
-                        📄 รายละเอียด
+                        <svg class="w-5 h-5 mr-2 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        รายละเอียด
                         <span id="details-panel-id" class="ml-2 text-red-600"></span>
                     </h2>
                     <div id="panel-actions-container" class="flex space-x-2">
@@ -828,9 +985,26 @@
         </div>
     </div>
 
+    <!-- --- PASSWORD MODAL --- -->
+    <div id="password-modal" class="fixed inset-0 bg-black bg-opacity-60 z-[100] hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4 transform transition-all scale-100">
+            <h3 class="text-xl font-bold text-gray-900 mb-4 text-center">กรุณาใส่รหัสผ่าน</h3>
+            <p id="password-error" class="text-red-500 text-sm mb-2 hidden text-center">รหัสผ่านไม่ถูกต้อง</p>
+            <input type="password" id="password-input" class="input-box-style mb-4 w-full text-center text-lg" placeholder="รหัสผ่าน...">
+            <div class="flex gap-3 justify-center">
+                <button id="cancel-password-btn" class="px-4 py-2 border border-gray-300 text-base font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors w-full">
+                    ยกเลิก
+                </button>
+                <button id="confirm-password-btn" class="px-4 py-2 border border-transparent text-base font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 shadow-sm transition-colors w-full">
+                    ตกลง
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- CONFIGURATION ---
-        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbxUFt0EgK-3gGUBGZTRd0K6yhaI4b50ao5NLFRUOnrxiwg95fUj07_jBCsa_Fp9TzaX/exec";
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbz5sYz1AJgfxQjd9B5E3JYKbRuKeTMREiBt3mtYxh6K6zkMaZS98AUO7754adYPDigzNg/exec";
         const CLOUDINARY_CLOUD_NAME = "dsmiqo5si"; 
         const CLOUDINARY_UPLOAD_PRESET = "Accident";
         const DRAFT_KEY = 'accidentFormDrafts';
@@ -839,57 +1013,33 @@
         
         // รายการลักษณะอุบัติเหตุ (Accident Types) - สาเหตุ/เหตุการณ์
         const ACCIDENT_TYPES = [
-             "ตกจากที่สูง",
-		"หกล้ม ลื่นล้ม",
-		"อาคารหรือสิ่งก่อสร้างพังทับ",
-		"วัตถุหรือสิ่งของพังทลาย/หล่นทับ",
-		"วัตถุหรือสิ่งของกระแทกหรือชน",
-		"วัตถุหรือสิ่งของหนีบหรือดึง",
-		"วัตถุหรือสิ่งของตัด/บาด/ทิ่ม/แทง",
-		"วัตถุหรือสิ่งของกระเด็นเข้าตา",
-		"ยกหรือเคลื่อนย้ายของหนัก",
-		"อาการเจ็บป่วยจากท่าทางการทำงาน",
-		"อุบัติเหตุจากยานพาหนะ",
-		"อุบัติเหตุจากรถโฟล์คลิฟท์",
-		"วัตถุหรือสิ่งของระเบิด",
-		"ไฟฟ้าช็อต",
-		"ผลจากความ,ร้อนสูงหรือสัมผัสของร้อน",
-		"ผลจากความเย็นจัดหรือสัมผัสความเย็น",
-		"สัมผัสสิ่งมีพิษ สารเคมี แพ้จากการสัมผัสสิ่งของ",
-		"อันตรายจากแสง",
-		"อันตรายจากรังสี",
-		"ถูกทำร้ายร่างกาย",
-		"ถูกสัตว์ทำร้าย",
-		"โรคเนื่องจากการทำงาน",
-		"อุบัติเหตุจากการเดิน",
+            "ตกจากที่สูง",
+            "หกล้ม ลื่นล้ม",
+            "อาคารหรือสิ่งก่อสร้างพังทับ",
+            "วัตถุหรือสิ่งของพังทลาย/หล่นทับ",
+            "วัตถุหรือสิ่งของกระแทกหรือชน",
+            "วัตถุหรือสิ่งของหนีบหรือดึง",
+            "วัตถุหรือสิ่งของตัด/บาด/ทิ่ม/แทง",
+            "วัตถุหรือสิ่งของกระเด็นเข้าตา",
+            "ยกหรือเคลื่อนย้ายของหนัก",
+            "อาการเจ็บป่วยจากท่าทางการทำงาน",
+            "อุบัติเหตุจากยานพาหนะ",
+            "อุบัติเหตุจากรถโฟล์คลิฟท์",
+            "วัตถุหรือสิ่งของระเบิด",
+            "ไฟฟ้าช็อต",
+            "ผลจากความร้อนสูงหรือสัมผัสของร้อน",
+            "ผลจากความเย็นจัดหรือสัมผัสความเย็น",
+            "สัมผัสสิ่งมีพิษ สารเคมี แพ้จากการสัมผัสสิ่งของ",
+            "อันตรายจากแสง",
+            "อันตรายจากรังสี",
+            "ถูกทำร้ายร่างกาย",
+            "ถูกสัตว์ทำร้าย",
+            "โรคเนื่องจากการทำงาน",
+            "อุบัติเหตุจากการเดิน",
         ];
 
         // รายการลักษณะการบาดเจ็บ (Injury Types) - ผลกระทบต่อร่างกาย
-        const INJURY_TYPES = [
-             "ตกจากที่สูง",
-		"หกล้ม ลื่นล้ม",
-		"อาคารหรือสิ่งก่อสร้างพังทับ",
-		"วัตถุหรือสิ่งของพังทลาย/หล่นทับ",
-		"วัตถุหรือสิ่งของกระแทกหรือชน",
-		"วัตถุหรือสิ่งของหนีบหรือดึง",
-		"วัตถุหรือสิ่งของตัด/บาด/ทิ่ม/แทง",
-		"วัตถุหรือสิ่งของกระเด็นเข้าตา",
-		"ยกหรือเคลื่อนย้ายของหนัก",
-		"อาการเจ็บป่วยจากท่าทางการทำงาน",
-		"อุบัติเหตุจากยานพาหนะ",
-		"อุบัติเหตุจากรถโฟล์คลิฟท์",
-		"วัตถุหรือสิ่งของระเบิด",
-		"ไฟฟ้าช็อต",
-		"ผลจากความ,ร้อนสูงหรือสัมผัสของร้อน",
-		"ผลจากความเย็นจัดหรือสัมผัสความเย็น",
-		"สัมผัสสิ่งมีพิษ สารเคมี แพ้จากการสัมผัสสิ่งของ",
-		"อันตรายจากแสง",
-		"อันตรายจากรังสี",
-		"ถูกทำร้ายร่างกาย",
-		"ถูกสัตว์ทำร้าย",
-		"โรคเนื่องจากการทำงาน",
-		"อุบัติเหตุจากการเดิน",
-        ];
+        const INJURY_TYPES = [...ACCIDENT_TYPES];
 
         // --- DOM ELEMENTS ---
         const form = document.getElementById('accident-form');
@@ -933,35 +1083,32 @@
         const successAllReportsBtn = document.getElementById('success-all-reports-btn');
         const successNewBtn = document.getElementById('success-new-btn');
         
-        // New Draft Modal
         const draftModal = document.getElementById('draft-modal');
         const closeDraftModalBtn = document.getElementById('close-draft-modal-btn');
-
-        // Delete Confirm Modal
+        
         const deleteConfirmModal = document.getElementById('delete-confirm-modal');
         const deleteConfirmIdText = document.getElementById('delete-confirm-id');
         const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
         const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
         const confirmDeleteText = document.getElementById('confirm-delete-text');
         const deleteLoader = document.getElementById('delete-loader');
+        
+        const passwordModal = document.getElementById('password-modal');
+        const passwordInput = document.getElementById('password-input');
+        const passwordError = document.getElementById('password-error');
+        const cancelPasswordBtn = document.getElementById('cancel-password-btn');
+        const confirmPasswordBtn = document.getElementById('confirm-password-btn');
 
-        // Other Category Input
         const accidentCategorySelect = document.getElementById('accident-category');
         const accidentSubcategorySelect = document.getElementById('accident-subcategory');
         const accidentCategoryOtherInput = document.getElementById('accident-category-other');
-        
-        // Other Accident Type Input
         const accTypeSelect = document.getElementById('acc-type');
         const accTypeOtherInput = document.getElementById('acc-type-other');
 
-        // Victims Container
         const victimsContainer = document.getElementById('victims-container');
         const addVictimButton = document.getElementById('add-victim-button');
 
-        // Dashboard Filters
-        const dashboardBranchFilter = document.getElementById('dashboard-branch-filter');
-        const dashboardCategoryFilter = document.getElementById('dashboard-category-filter');
-        const dashboardShiftFilter = document.getElementById('dashboard-shift-filter');
+        // Dashboard Filters Elements
         const dashboardDateStart = document.getElementById('dashboard-date-start');
         const dashboardDateEnd = document.getElementById('dashboard-date-end');
         const dashboardClearFiltersBtn = document.getElementById('dashboard-clear-filters');
@@ -983,13 +1130,107 @@
         let victimCount = 0;
         
         // Chart Instances
+        let monthSummaryChartInstance = null;
         let branchChartInstance = null;
-        let monthChartInstance = null;
         let categoryChartInstance = null;
-        let topBranchChartInstance = null;
+        let personChartInstance = null;
+        let shiftChartInstance = null;
+
+        // Menu and Password Variables
+        let pendingPageId = null;
+        let pendingMenuLink = null;
 
         // Signature Pad Variables
         let sigCanvas, sigCtx, drawing = false, currentSigRow = null;
+
+        // --- MULTI-SELECT COMPONENT LOGIC ---
+        function initMultiSelect(containerId) {
+            const container = document.getElementById(containerId);
+            if(!container) return;
+            const btn = container.querySelector('.multi-select-btn');
+            const dropdown = container.querySelector('.multi-select-dropdown');
+            const selectAllCheck = dropdown.querySelector('input[value="all"]');
+            const textSpan = btn.querySelector('.truncate');
+            const optionsContainer = dropdown.querySelector('.options-container');
+
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                // Close others
+                document.querySelectorAll('.multi-select-dropdown.show').forEach(d => {
+                    if (d !== dropdown) d.classList.remove('show');
+                });
+                dropdown.classList.toggle('show');
+            });
+
+            dropdown.addEventListener('change', (e) => {
+                const checkboxes = Array.from(optionsContainer.querySelectorAll('input[type="checkbox"]'));
+                if (e.target === selectAllCheck) {
+                    checkboxes.forEach(cb => cb.checked = selectAllCheck.checked);
+                } else {
+                    const allChecked = checkboxes.every(cb => cb.checked);
+                    selectAllCheck.checked = allChecked;
+                }
+                updateBtnText();
+                updateDashboardStats();
+            });
+
+            function updateBtnText() {
+                const checkboxes = Array.from(optionsContainer.querySelectorAll('input[type="checkbox"]'));
+                const checked = checkboxes.filter(cb => cb.checked);
+                if (checked.length === checkboxes.length || checked.length === 0) {
+                    textSpan.textContent = "ทั้งหมด";
+                    if(checked.length === 0) selectAllCheck.checked = false;
+                } else {
+                    textSpan.textContent = `เลือก ${checked.length} รายการ`;
+                }
+            }
+            updateBtnText();
+        }
+
+        function getMultiSelectValues(containerId) {
+            const container = document.getElementById(containerId);
+            if(!container) return [];
+            const selectAllCheck = container.querySelector('input[value="all"]');
+            const checkboxes = Array.from(container.querySelectorAll('.options-container input[type="checkbox"]'));
+            
+            // If select all is checked, consider it as "all" (return empty array to skip filter logic)
+            if (selectAllCheck.checked) return [];
+            
+            return checkboxes.filter(cb => cb.checked).map(cb => cb.value);
+        }
+
+        function resetMultiSelects() {
+            document.querySelectorAll('.multi-select-dropdown').forEach(dropdown => {
+                const allChecks = dropdown.querySelectorAll('input[type="checkbox"]');
+                allChecks.forEach(cb => cb.checked = true);
+            });
+            document.querySelectorAll('.multi-select-container').forEach(container => {
+                const btnSpan = container.querySelector('.multi-select-btn .truncate');
+                if(btnSpan) btnSpan.textContent = "ทั้งหมด";
+            });
+        }
+
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.multi-select-container')) {
+                document.querySelectorAll('.multi-select-dropdown.show').forEach(d => d.classList.remove('show'));
+            }
+        });
+
+        // --- NEW HELPER FUNCTION FOR DAMAGE COST ---
+        function updateDamageCostRequirement() {
+            const category = document.getElementById('accident-category').value;
+            const damageCostInput = document.getElementById('damage-cost');
+            const damageCostAsterisk = document.getElementById('damage-cost-asterisk');
+            
+            if (category === 'อุบัติเหตุนอกงาน') {
+                damageCostInput.removeAttribute('required');
+                if (damageCostAsterisk) damageCostAsterisk.style.display = 'none';
+            } else {
+                damageCostInput.setAttribute('required', 'true');
+                if (damageCostAsterisk) damageCostAsterisk.style.display = 'inline';
+            }
+        }
 
         // --- INITIALIZATION ---
         document.getElementById('date-issued').valueAsDate = new Date();
@@ -1003,6 +1244,10 @@
         addInvestigator();
         addVictim(); 
         initSignaturePad();
+        
+        // Init multi-selects
+        ['filter-branch', 'filter-category', 'filter-person', 'filter-shift'].forEach(initMultiSelect);
+
 
         // --- SIGNATURE PAD LOGIC ---
         function initSignaturePad() {
@@ -1133,6 +1378,7 @@
             }
 
             updateVictimRequirements();
+            updateDamageCostRequirement();
         });
         
         accTypeSelect.addEventListener('change', function() {
@@ -1147,7 +1393,6 @@
             }
         });
 
-        // Event Delegation for Victim Container
         victimsContainer.addEventListener('change', function(e) {
             if (e.target.classList.contains('victim-injury-select')) {
                 const otherInput = e.target.nextElementSibling;
@@ -1196,6 +1441,17 @@
         sidebarBackdrop?.addEventListener('click', closeAllSidebars);
         document.getElementById('main-menu')?.addEventListener('click', handleMenuClick);
 
+        cancelPasswordBtn?.addEventListener('click', () => {
+            passwordModal.classList.add('hidden');
+            pendingPageId = null;
+            pendingMenuLink = null;
+        });
+
+        confirmPasswordBtn?.addEventListener('click', checkPassword);
+        passwordInput?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') checkPassword();
+        });
+
         form.addEventListener('submit', handleFormSubmit);
         saveDraftButton.addEventListener('click', saveDraft);
         clearFormButton.addEventListener('click', () => clearForm(false));
@@ -1205,7 +1461,6 @@
 
         document.getElementById('add-investigator-button').addEventListener('click', () => addInvestigator());
         
-        // Investigator Row Event Delegation (Includes Signature Pad trigger)
         document.getElementById('investigators-container').addEventListener('click', (e) => {
             if (e.target.closest('.remove-investigator-button')) { 
                 e.target.closest('.investigator-row').remove(); 
@@ -1215,7 +1470,6 @@
                 openSignaturePad(e.target.closest('.investigator-row'));
             }
             if (e.target.closest('.inv-sig-img')) {
-                // Reset Signature Image
                 const row = e.target.closest('.investigator-row');
                 row.querySelector('.inv-sig-img').classList.add('hidden');
                 row.querySelector('.inv-sig-img').src = '';
@@ -1236,7 +1490,7 @@
             if (e.target.closest('.delete-branch-button')) handleBranchAction('deleteBranch', e.target.closest('.delete-branch-button').dataset.branch);
         });
 
-        // Filter Logic
+        // Report Filters Logic
         allReportsSearch?.addEventListener('keyup', filterAllReports);
         allReportsBranchFilter?.addEventListener('change', filterAllReports);
         allReportsCategoryFilter?.addEventListener('change', filterAllReports); 
@@ -1256,17 +1510,15 @@
                 if (window.innerWidth >= 1024) loadReportToPanel(id); else openReportDetailsModal(id);
             }
         });
-        
-        [dashboardBranchFilter, dashboardCategoryFilter, dashboardShiftFilter, dashboardDateStart, dashboardDateEnd].forEach(el => {
-            el.addEventListener('change', updateDashboardStats);
+
+        [dashboardDateStart, dashboardDateEnd].forEach(el => {
+            el?.addEventListener('change', updateDashboardStats);
         });
 
         dashboardClearFiltersBtn.addEventListener('click', () => {
-            dashboardBranchFilter.value = "";
-            dashboardCategoryFilter.value = "";
-            dashboardShiftFilter.value = "";
             dashboardDateStart.value = "";
             dashboardDateEnd.value = "";
+            resetMultiSelects();
             updateDashboardStats();
         });
 
@@ -1286,7 +1538,6 @@
             pendingDeleteId = null;
         });
         confirmDeleteBtn.addEventListener('click', confirmDeleteAction);
-
 
         successAllReportsBtn.addEventListener('click', () => {
             successModal.classList.add('hidden');
@@ -1328,17 +1579,61 @@
             
             const pageId = link.dataset.page;
 
-            if (pageId === 'settings') {
-                const pass = prompt("กรุณาใส่รหัสผ่านเพื่อเข้าสู่เมนูตั้งค่า:");
-                if (pass !== 'GBH') { alert("รหัสผ่านไม่ถูกต้อง"); return; }
-            }
-            
-            if (pageId === 'dashboard') {
-                const pass = prompt("กรุณาใส่รหัสผ่านเพื่อเข้าสู่เมนูแดชบอร์ด:");
-                if (pass !== 'GBH') { alert("รหัสผ่านไม่ถูกต้อง"); return; }
+            if (pageId === 'settings' || pageId === 'dashboard') {
+                pendingPageId = pageId;
+                pendingMenuLink = link;
+                passwordInput.value = '';
+                passwordError.classList.add('hidden');
+                passwordModal.classList.remove('hidden');
+                setTimeout(() => passwordInput.focus(), 100);
+                return;
             }
 
-            document.querySelectorAll('.menu-link').forEach(l => l.classList.remove('active')); link.classList.add('active');
+            executeMenuTransition(pageId, link);
+        }
+
+        function checkPassword() {
+            const pass = passwordInput.value;
+            if (pass === 'GBH') {
+                passwordModal.classList.add('hidden');
+                if (pendingPageId && pendingMenuLink) {
+                    executeMenuTransition(pendingPageId, pendingMenuLink);
+                }
+                pendingPageId = null;
+                pendingMenuLink = null;
+            } else {
+                passwordError.classList.remove('hidden');
+            }
+        }
+
+        function goToAllReports(category) {
+            // Update menu UI
+            document.querySelectorAll('.menu-link').forEach(l => l.classList.remove('active'));
+            const link = document.querySelector('.menu-link[data-page="all-reports"]');
+            if (link) link.classList.add('active');
+
+            // Switch page
+            allPages.forEach(p => p.classList.add('hidden'));
+            document.getElementById('page-all-reports').classList.remove('hidden');
+
+            // Set filter
+            const catFilter = document.getElementById('all-reports-category-filter');
+            if (category === 'all') {
+                catFilter.value = '';
+            } else {
+                catFilter.value = category;
+            }
+
+            // Apply filter
+            filterAllReports();
+
+            // Close sidebars if mobile
+            if (window.innerWidth < 1024) closeAllSidebars();
+        }
+
+        function executeMenuTransition(pageId, link) {
+            document.querySelectorAll('.menu-link').forEach(l => l.classList.remove('active')); 
+            link.classList.add('active');
             
             allPages.forEach(p => p.classList.add('hidden'));
             const target = document.getElementById(`page-${pageId}`);
@@ -1446,15 +1741,9 @@
             const isPropertyDamage = category === 'ทรัพย์สินเสียหาย';
             
             const selectors = [
-                '.victim-name', 
-                '.victim-id', 
-                '.victim-age', 
-                '.victim-work-years', 
-                '.victim-dept', 
-                '.victim-injury-organ', 
-                '.victim-treatment', 
-                '.victim-days-lost-type',
-                '.victim-injury-select'
+                '.victim-name', '.victim-id', '.victim-age', '.victim-work-years', 
+                '.victim-dept', '.victim-injury-organ', '.victim-treatment', 
+                '.victim-days-lost-type', '.victim-injury-select'
             ];
 
             const cards = document.querySelectorAll('.victim-card');
@@ -1751,6 +2040,7 @@
 
             victims.forEach(v => addVictim(v));
             updateVictimRequirements(); 
+            updateDamageCostRequirement();
 
             if (data.imageUrl && !data.imageUrl.startsWith('Error')) {
                 imagePreview.src = data.imageUrl;
@@ -2195,11 +2485,15 @@
                     <div class="flex items-center gap-1">
                         <input type="text" class="input-box-style inv-sig-input ${isImg ? 'hidden' : ''}" value="${isImg ? '' : sig}" placeholder="พิมพ์ชื่อ...">
                         <img src="${isImg ? sig : ''}" class="inv-sig-img h-10 w-full object-contain border bg-white rounded cursor-pointer ${isImg ? '' : 'hidden'}" title="คลิกเพื่อลบ/พิมพ์ใหม่">
-                        <button type="button" class="p-2 bg-gray-200 rounded hover:bg-gray-300 open-sig-btn flex-shrink-0 h-[2.5rem]" title="วาดลายเซ็น">✍️</button>
+                        <button type="button" class="p-2 bg-gray-200 rounded hover:bg-gray-300 open-sig-btn flex-shrink-0 h-[2.5rem] flex items-center justify-center" title="วาดลายเซ็น">
+                            <svg class="w-4 h-4 text-gray-700 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                        </button>
                     </div>
                     <input type="hidden" class="inv-sig-hidden" value="${isImg ? sig : ''}">
                 </div>
-                <button type="button" class="remove-investigator-button absolute right-1 top-2 p-1 text-red-500 hover:text-red-700 font-bold text-lg leading-none">×</button>
+                <button type="button" class="remove-investigator-button absolute right-1 top-2 p-1 text-red-500 hover:text-red-700 font-bold text-lg leading-none" title="ลบรายชื่อ">
+                    <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
             `;
             document.getElementById('investigators-container').appendChild(div);
             updateInvestigatorNumbers();
@@ -2212,11 +2506,10 @@
         
         async function loadBranchOptions() { 
             const s = document.getElementById('branch');
-            const dashboardFilter = document.getElementById('dashboard-branch-filter');
             const allReportsFilter = document.getElementById('all-reports-branch-filter'); 
+            const dashboardBranchOptions = document.querySelector('#filter-branch .options-container');
             
             try { 
-                // ตั้งค่าแจ้งเตือนขณะโหลด
                 if (s) s.innerHTML = '<option value="">กำลังโหลดสาขา...</option>';
                 
                 const res = await fetch(`${WEB_APP_URL}?action=getBranches`); 
@@ -2227,14 +2520,18 @@
                     const optionsHTML = json.data.map(b => `<option value="${b}">${b}</option>`).join('');
                     
                     if (s) s.innerHTML = '<option value="">-- เลือก --</option>' + optionsHTML; 
-                    if (dashboardFilter) dashboardFilter.innerHTML = '<option value="">-- ทั้งหมดทุกสาขา --</option>' + optionsHTML;
                     if (allReportsFilter) allReportsFilter.innerHTML = '<option value="">-- ทุกสาขา --</option>' + optionsHTML;
+                    
+                    if (dashboardBranchOptions) {
+                        dashboardBranchOptions.innerHTML = json.data.map(b => 
+                            `<label class="multi-select-option"><input type="checkbox" value="${b}" checked> ${b}</label>`
+                        ).join('');
+                    }
                 } else {
                     throw new Error(json.message || 'API Error');
                 }
             } catch (e) { 
                 console.error('Error loading branches:', e); 
-                // แจ้งเตือนหากโหลดไม่สำเร็จ
                 if (s) s.innerHTML = '<option value="">-- โหลดสาขาไม่สำเร็จ โปรดรีเฟรช --</option>';
             } 
         }
@@ -2256,6 +2553,9 @@
             
             accTypeOtherInput.classList.add('hidden');
             accTypeOtherInput.value = '';
+
+            updateVictimRequirements(); 
+            updateDamageCostRequirement();
 
             if (!silent) showMessage('ล้างข้อมูลแล้ว', 'success'); 
         }
@@ -2326,6 +2626,7 @@
             if(d.data.victims?.length) d.data.victims.forEach(addVictim); else addVictim();
             
             updateVictimRequirements(); 
+            updateDamageCostRequirement();
 
             currentDraftIdInput.value = id; 
             toggleSidebar(draftSidebar, false); 
@@ -2335,7 +2636,6 @@
         function deleteDraft(id, silent) { const drafts = getAllDrafts().filter(x => x.id !== id); localStorage.setItem(DRAFT_KEY, JSON.stringify(drafts)); if(!silent) { renderDraftList(); showMessage('ลบแล้ว', 'success'); } }
         
         async function loadDashboardData() { 
-            document.getElementById('dashboard-content').innerHTML = '<p>Loading...</p>'; 
             try { 
                 const res = await fetch(`${WEB_APP_URL}?action=getReports`); 
                 const json = await res.json(); 
@@ -2347,9 +2647,11 @@
         }
 
         function updateDashboardStats() {
-            const filterBranch = dashboardBranchFilter.value;
-            const filterCategory = dashboardCategoryFilter.value;
-            const filterShift = dashboardShiftFilter.value;
+            // Get values from Multi-selects
+            const selectedBranches = getMultiSelectValues('filter-branch');
+            const selectedCategories = getMultiSelectValues('filter-category');
+            const selectedPersons = getMultiSelectValues('filter-person');
+            const selectedShifts = getMultiSelectValues('filter-shift');
             
             let filterStart = null;
             if (dashboardDateStart.value) {
@@ -2363,18 +2665,24 @@
                 filterEnd = new Date(y, m - 1, d, 23, 59, 59, 999);
             }
 
+            // FILTER DATA
             let filteredData = allReportsData.filter(r => {
                 let pass = true;
 
-                if (filterBranch && r.branch !== filterBranch) pass = false;
-                if (filterCategory && r.accidentCategory !== filterCategory) pass = false;
-                if (filterShift && r.workShift !== filterShift) pass = false;
+                if (selectedBranches.length > 0 && !selectedBranches.includes(r.branch)) pass = false;
+                
+                // For Category, map detailed input back to main category if needed, or exact match
+                let rCat = r.accidentCategory;
+                if(!["ทรัพย์สินเสียหาย", "อุบัติเหตุนอกงาน", "อุบัติเหตุในงาน"].includes(rCat)) rCat = "อื่นๆ";
+                if (selectedCategories.length > 0 && !selectedCategories.includes(rCat)) pass = false;
+                
+                if (selectedPersons.length > 0 && !selectedPersons.includes(r.affectedPersonType)) pass = false;
+                if (selectedShifts.length > 0 && !selectedShifts.includes(r.workShift)) pass = false;
 
                 if (filterStart || filterEnd) {
                     const reportDate = r.accDate ? new Date(r.accDate) : null;
-                    if (!reportDate) {
-                        pass = false; 
-                    } else {
+                    if (!reportDate) { pass = false; } 
+                    else {
                         if (filterStart && reportDate < filterStart) pass = false;
                         if (filterEnd && reportDate > filterEnd) pass = false;
                     }
@@ -2382,170 +2690,292 @@
                 return pass;
             });
 
-            renderDashboardTable(filteredData.slice(0,10));
-            processChartData(filteredData);
+            calculateSummariesAndTop3(filteredData);
+            processNewCharts(filteredData);
         }
 
-        function renderDashboardTable(data) { let html = `<table class="min-w-full divide-y divide-gray-200 text-sm"><thead><tr class="bg-gray-50"><th class="px-4 py-2 text-left">ID</th><th class="px-4 py-2 text-left">วันที่</th><th class="px-4 py-2 text-left">สาขา</th><th class="px-4 py-2 text-left">สถานที่</th></tr></thead><tbody class="divide-y divide-gray-200">`; data.forEach(r => { html += `<tr><td class="px-4 py-2">${r.ReportID}</td><td class="px-4 py-2">${r.accDate?.split(' ')[0]||'-'}</td><td class="px-4 py-2">${r.branch}</td><td class="px-4 py-2">${r.accLocation}</td></tr>`; }); html += '</tbody></table>'; document.getElementById('dashboard-content').innerHTML = html; }
-        
-        function processChartData(data) {
+        function calculateSummariesAndTop3(data) {
             const totalReports = data.length;
             const totalCost = data.reduce((sum, r) => sum + (parseFloat(r.damageCost) || 0), 0);
             
             let totalDaysLost = 0;
-            const branchDaysMap = {};
+            let catProp = 0, catOn = 0, catOff = 0, catOther = 0;
+            const branchStats = {}; // { branchName: { count:0, cost:0, days:0 } }
 
             data.forEach(r => {
+                const b = r.branch || 'ไม่ระบุ';
+                if (!branchStats[b]) branchStats[b] = { count: 0, cost: 0, days: 0 };
+                
+                // Counts
+                branchStats[b].count += 1;
+                
+                // Categories Breakdown
+                let cat = r.accidentCategory;
+                if (cat === 'ทรัพย์สินเสียหาย') catProp++;
+                else if (cat === 'อุบัติเหตุในงาน') catOn++;
+                else if (cat === 'อุบัติเหตุนอกงาน') catOff++;
+                else catOther++;
+                
+                // Costs
+                branchStats[b].cost += (parseFloat(r.damageCost) || 0);
+
+                // Days
                 let days = 0;
                 let victims = r.victims;
                 if (typeof victims === 'string') try { victims = JSON.parse(victims); } catch(e){}
-                
                 if (Array.isArray(victims) && victims.length > 0) {
                      days = victims.reduce((acc, v) => acc + (parseFloat(v.victimDaysLost) || 0), 0);
                 } else {
                      days = parseFloat(r.victimDaysLost) || 0;
                 }
-                
                 totalDaysLost += days;
-
-                const b = r.branch || 'ไม่ระบุ';
-                branchDaysMap[b] = (branchDaysMap[b] || 0) + days;
+                branchStats[b].days += days;
             });
 
-            let maxBranchName = '-';
-            let maxBranchVal = 0;
-            for (const [b, d] of Object.entries(branchDaysMap)) {
-                if (d > maxBranchVal) {
-                    maxBranchVal = d;
-                    maxBranchName = b;
-                }
-            }
-            
+            // Update DOM Summary Numbers
             document.getElementById('stat-total-reports').innerText = totalReports;
             document.getElementById('stat-total-cost').innerText = totalCost.toLocaleString('th-TH', {minimumFractionDigits: 2});
             document.getElementById('stat-total-days-lost').innerText = totalDaysLost;
-            document.getElementById('stat-max-branch-days').innerText = maxBranchName;
-            document.getElementById('stat-max-branch-days-val').innerText = `${maxBranchVal} วัน`;
+            
+            document.getElementById('stat-cat-prop').innerText = catProp;
+            document.getElementById('stat-cat-on').innerText = catOn;
+            document.getElementById('stat-cat-off').innerText = catOff;
+            document.getElementById('stat-cat-other').innerText = catOther;
 
+            // Generate Top 3 Arrays
+            const branchesArr = Object.entries(branchStats);
+            const topCounts = [...branchesArr].sort((a, b) => b[1].count - a[1].count).slice(0, 3);
+            const topDays = [...branchesArr].sort((a, b) => b[1].days - a[1].days).slice(0, 3);
+            const topCost = [...branchesArr].sort((a, b) => b[1].cost - a[1].cost).slice(0, 3);
+
+            // Render Top 3 Counts
+            const elTopCounts = document.getElementById('top-branches-accidents');
+            elTopCounts.innerHTML = topCounts.length ? topCounts.map((item, index) => `
+                <div class="flex justify-between items-center bg-gray-50 p-2 rounded border">
+                    <span class="font-bold text-gray-700">${index+1}. ${item[0]}</span>
+                    <span class="bg-red-100 text-red-800 text-xs font-bold px-2 py-1 rounded-full">${item[1].count} รายการ</span>
+                </div>
+            `).join('') : '<p class="text-sm text-gray-500 italic">ไม่มีข้อมูล</p>';
+
+            // Render Top 3 Days
+            const elTopDays = document.getElementById('top-branches-days');
+            elTopDays.innerHTML = topDays.length ? topDays.map((item, index) => `
+                <div class="flex justify-between border-b border-gray-100 pb-1 last:border-0">
+                    <span class="text-gray-600 truncate mr-2">${index+1}. ${item[0]}</span>
+                    <span class="font-bold">${item[1].days} วัน</span>
+                </div>
+            `).join('') : '<p class="text-xs text-gray-500 italic">ไม่มีข้อมูล</p>';
+
+            // Render Top 3 Cost
+            const elTopCost = document.getElementById('top-branches-cost');
+            elTopCost.innerHTML = topCost.length ? topCost.map((item, index) => `
+                <div class="flex justify-between border-b border-gray-100 pb-1 last:border-0">
+                    <span class="text-gray-600 truncate mr-2">${index+1}. ${item[0]}</span>
+                    <span class="font-bold">${item[1].cost.toLocaleString('th-TH')} บ.</span>
+                </div>
+            `).join('') : '<p class="text-xs text-gray-500 italic">ไม่มีข้อมูล</p>';
+        }
+
+        // Configuration for uniform charts
+        const commonChartOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: { beginAtZero: true, ticks: { precision: 0, stepSize: 1 } }
+            },
+            plugins: {
+                legend: { position: 'bottom' },
+                datalabels: {
+                    color: '#444',
+                    font: { weight: 'bold' },
+                    formatter: (value) => value > 0 ? value : ''
+                }
+            }
+        };
+
+        function processNewCharts(data) {
+            const monthsLabel = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+            
+            // 1. Chart Data: Branch Pie Chart
             const branches = {};
-            const months = Array(12).fill(0);
-            const categories = {};
-
             data.forEach(r => {
                 const b = r.branch || 'ไม่ระบุ';
                 branches[b] = (branches[b] || 0) + 1;
+            });
+            const sortedBranches = Object.entries(branches).sort((a, b) => b[1] - a[1]); // All branches sorted desc
+            
+            try {
+                if(branchChartInstance) branchChartInstance.destroy();
                 
-                if (r.accDate) {
-                    try { months[new Date(r.accDate).getMonth()]++; } catch(e){}
-                }
+                // สร้างสีแบบ Dynamic ให้เพียงพอกับจำนวนสาขา
+                const branchColors = sortedBranches.map((_, index) => {
+                    const hue = (index * 137.5) % 360; // 137.5 is the golden angle, creates distinct colors
+                    return `hsl(${hue}, 70%, 55%)`;
+                });
 
-                const c = r.accidentCategory || 'ไม่ระบุ';
-                categories[c] = (categories[c] || 0) + 1;
-            });
-
-            const sortedBranches = Object.entries(branches).sort((a, b) => b[1] - a[1]).slice(0, 5);
-
-            if(branchChartInstance) branchChartInstance.destroy();
-            branchChartInstance = new Chart(document.getElementById('branchChart'), {
-                type: 'doughnut',
-                data: { 
-                    labels: Object.keys(branches), 
-                    datasets: [{ 
-                        data: Object.values(branches), 
-                        backgroundColor: ['#EF4444','#3B82F6','#10B981','#F59E0B', '#8B5CF6', '#EC4899'] 
-                    }] 
-                },
-                options: {
-                    plugins: {
-                        datalabels: {
-                            color: '#fff',
-                            font: { weight: 'bold' },
-                            formatter: (value) => value > 0 ? value : ''
-                        },
-                        legend: { position: 'bottom' }
-                    }
-                }
-            });
-
-            if(monthChartInstance) monthChartInstance.destroy();
-            monthChartInstance = new Chart(document.getElementById('monthChart'), {
-                type: 'bar',
-                data: { 
-                    labels: ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'], 
-                    datasets: [{ 
-                        label: 'จำนวนเคส', 
-                        data: months, 
-                        backgroundColor: '#3B82F6' 
-                    }] 
-                },
-                options: {
-                    plugins: {
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'top',
-                            color: '#444',
-                            font: { weight: 'bold' },
-                            formatter: (value) => value > 0 ? value : ''
-                        },
-                        legend: { display: false }
+                branchChartInstance = new Chart(document.getElementById('branchChart'), {
+                    type: 'pie',
+                    data: {
+                        labels: sortedBranches.map(i => i[0]),
+                        datasets: [{
+                            label: 'จำนวนรายงาน',
+                            data: sortedBranches.map(i => i[1]),
+                            backgroundColor: branchColors,
+                            borderWidth: 1,
+                            borderColor: '#ffffff'
+                        }]
                     },
-                    scales: { y: { beginAtZero: true, grace: '5%' } }
-                }
-            });
-
-            if(categoryChartInstance) categoryChartInstance.destroy();
-            categoryChartInstance = new Chart(document.getElementById('categoryChart'), {
-                type: 'pie',
-                data: {
-                    labels: Object.keys(categories),
-                    datasets: [{
-                        data: Object.values(categories),
-                        backgroundColor: ['#10B981', '#F59E0B', '#EF4444', '#6B7280']
-                    }]
-                },
-                options: {
-                    plugins: {
-                        datalabels: {
-                            color: '#fff',
-                            font: { weight: 'bold' },
-                            formatter: (value) => value > 0 ? value : ''
-                        },
-                        legend: { position: 'bottom' }
-                    }
-                }
-            });
-
-            if(topBranchChartInstance) topBranchChartInstance.destroy();
-            topBranchChartInstance = new Chart(document.getElementById('topBranchChart'), {
-                type: 'bar',
-                options: {
-                    indexAxis: 'y', 
-                    responsive: true,
-                    plugins: {
-                        legend: { display: false }, 
-                        datalabels: {
-                            anchor: 'end',
-                            align: 'right',
-                            color: '#444',
-                            font: { weight: 'bold' },
-                            formatter: (value) => value > 0 ? value : ''
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { 
+                                position: 'right',
+                                labels: { boxWidth: 12, font: { size: 11 } }
+                            }, 
+                            datalabels: { 
+                                color: '#ffffff',
+                                font: { weight: 'bold', size: 12 },
+                                formatter: (value) => value > 0 ? value : '',
+                                textShadowBlur: 4,
+                                textShadowColor: 'rgba(0,0,0,0.5)' // เพิ่มเงาให้ตัวหนังสืออ่านง่ายขึ้นบนสีอ่อน
+                            } 
                         }
-                    },
-                    scales: {
-                        x: { beginAtZero: true, grace: '10%' }
                     }
-                },
-                data: {
-                    labels: sortedBranches.map(item => item[0]),
-                    datasets: [{
-                        label: 'จำนวนครั้ง',
-                        data: sortedBranches.map(item => item[1]),
-                        backgroundColor: '#EF4444', 
-                        borderColor: '#B91C1C',
-                        borderWidth: 1
-                    }]
+                });
+            } catch (err) { console.error('Error rendering Branch Pie Chart:', err); }
+
+            // Prepare Data for Monthly Charts
+            const monthlyReports = Array(12).fill(0);
+            const monthlyBranches = Array(12).fill().map(() => new Set());
+            
+            // Map types for consistent stacked charting
+            const typesCategories = ["ทรัพย์สินเสียหาย", "อุบัติเหตุนอกงาน", "อุบัติเหตุในงาน", "อื่นๆ"];
+            const monthlyCategory = Array(12).fill().map(() => ({}));
+            
+            const typesPersons = ["พนักงาน(ไทย)", "พนักงาน(พม่า)", "PC", "ผู้รับเหมา", "ลูกค้า", "บุคคลอื่นที่สัญจร", "ทรัพย์สินเสียหาย"];
+            const monthlyPerson = Array(12).fill().map(() => ({}));
+            
+            const typesShifts = ["ในเวลางาน", "นอกเวลางาน"];
+            const monthlyShift = Array(12).fill().map(() => ({}));
+
+            data.forEach(r => {
+                if (r.accDate) {
+                    try {
+                        const dt = new Date(r.accDate);
+                        if (!isNaN(dt.getTime())) {
+                            const monthIndex = dt.getMonth();
+                            if (monthIndex >= 0 && monthIndex <= 11) {
+                                monthlyReports[monthIndex]++;
+                                if(r.branch) monthlyBranches[monthIndex].add(r.branch);
+                                
+                                // Category grouping
+                                let cat = r.accidentCategory;
+                                if(!typesCategories.includes(cat)) cat = "อื่นๆ";
+                                monthlyCategory[monthIndex][cat] = (monthlyCategory[monthIndex][cat] || 0) + 1;
+
+                                // Person grouping
+                                let per = r.affectedPersonType;
+                                monthlyPerson[monthIndex][per] = (monthlyPerson[monthIndex][per] || 0) + 1;
+
+                                // Shift grouping
+                                let shift = r.workShift;
+                                monthlyShift[monthIndex][shift] = (monthlyShift[monthIndex][shift] || 0) + 1;
+                            }
+                        }
+                    } catch(e){}
                 }
             });
+
+            // 2. Mixed Chart: Summary per month
+            try {
+                if(monthSummaryChartInstance) monthSummaryChartInstance.destroy();
+                monthSummaryChartInstance = new Chart(document.getElementById('monthSummaryChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: monthsLabel,
+                        datasets: [
+                            {
+                                type: 'bar',
+                                label: 'จำนวนรายงาน',
+                                data: monthlyReports,
+                                backgroundColor: '#EF4444',
+                                order: 2
+                            },
+                            {
+                                type: 'line',
+                                label: 'จำนวนสาขาที่เกิดเหตุ',
+                                data: monthlyBranches.map(set => set.size),
+                                borderColor: '#F59E0B',
+                                backgroundColor: '#F59E0B',
+                                borderWidth: 2,
+                                pointRadius: 4,
+                                fill: false,
+                                order: 1
+                            }
+                        ]
+                    },
+                    options: { ...commonChartOptions }
+                });
+            } catch (err) { console.error('Error rendering Month Summary Chart:', err); }
+
+            // Helper to build stacked datasets
+            function buildStackedDatasets(typesArray, monthlyDataObjArray, colors) {
+                return typesArray.map((type, index) => {
+                    return {
+                        label: type,
+                        data: monthlyDataObjArray.map(monthObj => monthObj[type] || 0),
+                        backgroundColor: colors[index % colors.length]
+                    };
+                });
+            }
+
+            const stackColors = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#6B7280'];
+            const stackOptions = {
+                ...commonChartOptions,
+                scales: {
+                    x: { stacked: true },
+                    y: { stacked: true, beginAtZero: true, ticks: { precision: 0, stepSize: 1 } }
+                },
+                plugins: {
+                    legend: { position: 'bottom' },
+                    datalabels: {
+                        color: '#fff',
+                        font: { weight: 'bold' },
+                        formatter: (value) => value > 0 ? value : ''
+                    }
+                }
+            };
+
+            // 3. Category Stacked Bar
+            try {
+                if(categoryChartInstance) categoryChartInstance.destroy();
+                categoryChartInstance = new Chart(document.getElementById('categoryChart'), {
+                    type: 'bar',
+                    data: { labels: monthsLabel, datasets: buildStackedDatasets(typesCategories, monthlyCategory, stackColors) },
+                    options: stackOptions
+                });
+            } catch (err) { console.error('Error rendering Category Chart:', err); }
+
+            // 4. Person Stacked Bar
+            try {
+                if(personChartInstance) personChartInstance.destroy();
+                personChartInstance = new Chart(document.getElementById('personChart'), {
+                    type: 'bar',
+                    data: { labels: monthsLabel, datasets: buildStackedDatasets(typesPersons, monthlyPerson, stackColors) },
+                    options: stackOptions
+                });
+            } catch (err) { console.error('Error rendering Person Chart:', err); }
+
+            // 5. Shift Stacked Bar
+            try {
+                if(shiftChartInstance) shiftChartInstance.destroy();
+                shiftChartInstance = new Chart(document.getElementById('shiftChart'), {
+                    type: 'bar',
+                    data: { labels: monthsLabel, datasets: buildStackedDatasets(typesShifts, monthlyShift, stackColors) },
+                    options: stackOptions
+                });
+            } catch (err) { console.error('Error rendering Shift Chart:', err); }
         }
         
         async function loadAllReportsList(forceRefresh = false) { 
@@ -2621,10 +3051,6 @@
                     <span class="text-gray-500 text-xs truncate ml-7">${r.accLocation || '-'}</span>
                 </div>
             `).join(''); 
-        }
-        
-        function handleReportSearch() { 
-            filterAllReports();
         }
         
         async function loadSettingsBranchList() { const c = document.getElementById('settings-branch-list-container'); c.innerHTML = 'Loading...'; const res = await fetch(`${WEB_APP_URL}?action=getBranches`); const json = await res.json(); c.innerHTML = json.data.map(b => `<div class="flex justify-between p-2 border-b"><span>${b}</span><button class="delete-branch-button text-red-500" data-branch="${b}">ลบ</button></div>`).join(''); }
