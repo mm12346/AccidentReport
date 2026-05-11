@@ -776,7 +776,14 @@
             </div>
             
             <div class="bg-white p-4 rounded-lg border shadow-sm col-span-1 md:col-span-2">
-                <h2 class="text-lg font-semibold text-center mb-4 text-gray-700">สรุปรายงานของแต่ละสาขา</h2>
+                <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-2">
+                    <h2 class="text-lg font-semibold text-gray-700 text-center sm:text-left">สรุปรายงานของแต่ละสาขา</h2>
+                    <!-- ADDED: ตัวแสดงจำนวนสาขา -->
+                    <div class="bg-orange-100 text-orange-800 text-sm font-bold px-4 py-1.5 rounded-full flex items-center shadow-sm border border-orange-200">
+                        <svg class="w-5 h-5 mr-1.5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                        สาขาที่เกิดเหตุทั้งหมด: <span id="stat-branch-count" class="mx-1.5 text-lg text-orange-700 font-extrabold">0</span> สาขา
+                    </div>
+                </div>
                 <div class="h-80 relative w-full flex justify-center">
                     <canvas id="branchChart"></canvas>
                 </div>
@@ -838,6 +845,17 @@
                         <option value="อุบัติเหตุนอกงาน">อุบัติเหตุนอกงาน</option>
                         <option value="อุบัติเหตุในงาน">อุบัติเหตุในงาน</option>
                         <option value="อื่นๆ">อื่นๆ</option>
+                    </select>
+
+                    <!-- Subcategory Filter (NEW) -->
+                    <select id="all-reports-subcategory-filter" class="input-box-style hidden">
+                        <option value="">-- ทุกประเภทย่อย --</option>
+                        <option value="ส่ง รพ.(พนักงานยื่นกท.)">ส่ง รพ.(พนักงานยื่นกท.)</option>
+                        <option value="ส่ง รพ.(พนักงานไม่ยื่นกท.)">ส่ง รพ.(พนักงานไม่ยื่นกท.)</option>
+                        <option value="ส่ง รพ.(ลูกค้า)">ส่ง รพ.(ลูกค้า)</option>
+                        <option value="ส่ง รพ.(ผู้รับเหมา)">ส่ง รพ.(ผู้รับเหมา)</option>
+                        <option value="ส่ง รพ.(PC)">ส่ง รพ.(PC)</option>
+                        <option value="ปฐมพยาบาลเบื้องต้น">ปฐมพยาบาลเบื้องต้น</option>
                     </select>
 
                     <!-- Month Filter -->
@@ -1136,6 +1154,7 @@
         const allReportsSearch = document.getElementById('all-reports-search');
         const allReportsBranchFilter = document.getElementById('all-reports-branch-filter');
         const allReportsCategoryFilter = document.getElementById('all-reports-category-filter'); 
+        const allReportsSubcategoryFilter = document.getElementById('all-reports-subcategory-filter');
         const allReportsMonthFilter = document.getElementById('all-reports-month-filter'); 
         const allReportsCount = document.getElementById('all-reports-count');
         const reloadReportsButton = document.getElementById('reload-reports-button'); 
@@ -1512,7 +1531,16 @@
         // Report Filters Logic
         allReportsSearch?.addEventListener('keyup', filterAllReports);
         allReportsBranchFilter?.addEventListener('change', filterAllReports);
-        allReportsCategoryFilter?.addEventListener('change', filterAllReports); 
+        allReportsCategoryFilter?.addEventListener('change', () => {
+            if (allReportsCategoryFilter.value === 'อุบัติเหตุในงาน') {
+                allReportsSubcategoryFilter.classList.remove('hidden');
+            } else {
+                allReportsSubcategoryFilter.classList.add('hidden');
+                allReportsSubcategoryFilter.value = '';
+            }
+            filterAllReports();
+        }); 
+        allReportsSubcategoryFilter?.addEventListener('change', filterAllReports);
         allReportsMonthFilter?.addEventListener('change', filterAllReports); 
         
         reloadReportsButton?.addEventListener('click', () => {
@@ -1641,6 +1669,15 @@
                 catFilter.value = '';
             } else {
                 catFilter.value = category;
+            }
+
+            // Trigger Subcategory visibility logic
+            const subcatFilter = document.getElementById('all-reports-subcategory-filter');
+            if (catFilter.value === 'อุบัติเหตุในงาน') {
+                subcatFilter.classList.remove('hidden');
+            } else {
+                subcatFilter.classList.add('hidden');
+                subcatFilter.value = '';
             }
 
             // Apply filter
@@ -2842,6 +2879,12 @@
             });
             const sortedBranches = Object.entries(branches).sort((a, b) => b[1] - a[1]); // All branches sorted desc
             
+            // ADDED: อัปเดตจำนวนสาขาทั้งหมดในหน้าจอ
+            const branchCountElement = document.getElementById('stat-branch-count');
+            if(branchCountElement) {
+                branchCountElement.innerText = sortedBranches.length;
+            }
+
             try {
                 if(branchChartInstance) branchChartInstance.destroy();
                 
@@ -3042,12 +3085,18 @@
             const q = allReportsSearch.value.toLowerCase();
             const branch = allReportsBranchFilter.value;
             const category = allReportsCategoryFilter.value; 
+            const subcategory = allReportsSubcategoryFilter?.value || "";
             const monthStr = allReportsMonthFilter.value; 
             
             const filtered = allReportsData.filter(r => {
                 const matchesSearch = JSON.stringify(r).toLowerCase().includes(q);
                 const matchesBranch = branch === "" || r.branch === branch;
                 const matchesCategory = category === "" || r.accidentCategory === category; 
+                
+                let matchesSubcategory = true;
+                if (category === 'อุบัติเหตุในงาน' && subcategory !== "") {
+                    matchesSubcategory = r.accidentSubcategory === subcategory;
+                }
                 
                 let matchesMonth = true;
                 if (monthStr) {
@@ -3064,7 +3113,7 @@
                     }
                 }
 
-                return matchesSearch && matchesBranch && matchesCategory && matchesMonth;
+                return matchesSearch && matchesBranch && matchesCategory && matchesSubcategory && matchesMonth;
             });
             
             renderAllReportsList(filtered);
